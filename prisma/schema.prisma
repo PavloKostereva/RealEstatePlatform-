@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  OWNER
+  ADMIN
+}
+
+enum ListingType {
+  RENT
+  SALE
+}
+
+enum ListingCategory {
+  APARTMENT
+  HOUSE
+  COMMERCIAL
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String?
+  phone         String?
+  avatar        String?
+  role          UserRole  @default(USER)
+  ownerVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  listings     Listing[]
+  savedListings SavedListing[]
+  messages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  reviews      Review[]
+}
+
+model Listing {
+  id          String        @id @default(uuid())
+  title       String
+  description String
+  type        ListingType
+  category    ListingCategory
+  price       Float
+  currency    String        @default("UAH")
+  address     String
+  latitude    Float?
+  longitude   Float?
+  area        Float?
+  rooms       Int?
+  images      String[]      @default([])
+  amenities   String[]      @default([])
+  availableFrom DateTime?
+  availableTo   DateTime?
+  status      ListingStatus @default(DRAFT)
+  views       Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  ownerId     String
+  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  savedBy     SavedListing[]
+  messages    Message[]
+  reviews     Review[]
+
+  @@index([status])
+  @@index([type])
+  @@index([category])
+  @@index([latitude, longitude])
+}
+
+model SavedListing {
+  id        String   @id @default(uuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  subject   String
+  content   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  senderId   String
+  receiverId String
+  listingId  String?
+
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver  User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int      // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  listingId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([listingId])
+}
+
+
+
+
+
+

@@ -1,0 +1,225 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
+
+interface SearchFiltersProps {
+  onNearMeClick?: (lat: number, lng: number) => void;
+}
+
+export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const locale = useLocale();
+  const t = useTranslations('filters');
+  const tCommon = useTranslations('common');
+  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [nearMe, setNearMe] = useState(searchParams.get('nearMe') === 'true');
+  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || '');
+  const [size, setSize] = useState(searchParams.get('size') || '');
+  const [label, setLabel] = useState(searchParams.get('label') || '');
+  const [gettingLocation, setGettingLocation] = useState(false);
+
+  const applyFilters = () => {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (nearMe) params.set('nearMe', 'true');
+    if (sortBy) params.set('sortBy', sortBy);
+    if (size) params.set('size', size);
+    if (label) params.set('label', label);
+
+    router.push(`/${locale}/listings?${params.toString()}`);
+  };
+
+  const resetFilters = () => {
+    setQuery('');
+    setNearMe(false);
+    setSortBy('');
+    setSize('');
+    setLabel('');
+    router.push(`/${locale}/listings`);
+  };
+
+  return (
+    <div className="mb-6">
+      <div className="flex flex-wrap items-center gap-3 bg-surface rounded-2xl border border-subtle px-4 py-3 shadow-sm">
+        <div className="flex-1 min-w-[240px]">
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('searchPlaceholder')}
+            className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+
+        <button
+          onClick={applyFilters}
+          className="h-11 px-5 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 transition">
+          {tCommon('search')}
+        </button>
+
+        <button
+          onClick={async () => {
+            // Перевіряємо чи є глобальний callback для карти (з HomeMapWithListings)
+            if ((window as any).handleNearMeMap) {
+              // Використовуємо геолокацію для карти
+              setGettingLocation(true);
+              try {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                      const { latitude, longitude } = position.coords;
+                      setNearMe(true);
+                      (window as any).handleNearMeMap(latitude, longitude);
+                      setGettingLocation(false);
+                    },
+                    (error) => {
+                      console.error('Geolocation error:', error);
+                      alert(
+                        'Не вдалося отримати ваше розташування. Переконайтеся, що ви надали дозвіл на доступ до геолокації.',
+                      );
+                      setGettingLocation(false);
+                      setNearMe(false);
+                    },
+                    {
+                      enableHighAccuracy: true,
+                      timeout: 10000,
+                      maximumAge: 0,
+                    },
+                  );
+                } else {
+                  alert('Ваш браузер не підтримує геолокацію.');
+                  setGettingLocation(false);
+                }
+              } catch (error) {
+                console.error('Error getting location:', error);
+                setGettingLocation(false);
+              }
+            } else if (onNearMeClick) {
+              // Якщо є prop callback, використовуємо його
+              setGettingLocation(true);
+              try {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                      const { latitude, longitude } = position.coords;
+                      setNearMe(true);
+                      onNearMeClick(latitude, longitude);
+                      setGettingLocation(false);
+                    },
+                    (error) => {
+                      console.error('Geolocation error:', error);
+                      alert(
+                        'Не вдалося отримати ваше розташування. Переконайтеся, що ви надали дозвіл на доступ до геолокації.',
+                      );
+                      setGettingLocation(false);
+                      setNearMe(false);
+                    },
+                    {
+                      enableHighAccuracy: true,
+                      timeout: 10000,
+                      maximumAge: 0,
+                    },
+                  );
+                } else {
+                  alert('Ваш браузер не підтримує геолокацію.');
+                  setGettingLocation(false);
+                }
+              } catch (error) {
+                console.error('Error getting location:', error);
+                setGettingLocation(false);
+              }
+            } else {
+              // Якщо немає callback, працюємо як раніше (для сторінки listings)
+              setNearMe((prev) => !prev);
+              setTimeout(applyFilters, 0);
+            }
+          }}
+          disabled={gettingLocation}
+          className={`h-11 px-4 rounded-xl border text-sm font-medium transition ${
+            nearMe
+              ? 'bg-primary-100 text-primary-700 border-primary-200'
+              : 'bg-surface-secondary text-muted-foreground border-subtle hover:border-primary-400'
+          } ${gettingLocation ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          {gettingLocation ? 'Завантаження...' : t('nearMe')}
+        </button>
+
+        <div className="relative">
+          <select
+            value={sortBy}
+            onChange={(e) => {
+              setSortBy(e.target.value);
+              setTimeout(applyFilters, 0);
+            }}
+            className="h-11 appearance-none bg-surface-secondary border border-subtle rounded-xl px-4 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <option value="">{t('priceDefault')}</option>
+            <option value="priceAsc">{t('priceLow')}</option>
+            <option value="priceDesc">{t('priceHigh')}</option>
+          </select>
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+            <svg className="w-4 h-4 text-muted-foreground" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M10 12a1 1 0 01-.707-.293l-3-3a1 1 0 111.414-1.414L10 9.586l2.293-2.293a1 1 0 111.414 1.414l-3 3A1 1 0 0110 12z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </span>
+        </div>
+
+        <div className="relative">
+          <select
+            value={size}
+            onChange={(e) => {
+              setSize(e.target.value);
+              setTimeout(applyFilters, 0);
+            }}
+            className="h-11 appearance-none bg-surface-secondary border border-subtle rounded-xl px-4 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <option value="">{t('sizeAllOption')}</option>
+            <option value="small">{t('sizeSmall')}</option>
+            <option value="medium">{t('sizeMedium')}</option>
+            <option value="large">{t('sizeLarge')}</option>
+          </select>
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+            <svg className="w-4 h-4 text-muted-foreground" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M10 12a1 1 0 01-.707-.293l-3-3a1 1 0 111.414-1.414L10 9.586l2.293-2.293a1 1 0 111.414 1.414l-3 3A1 1 0 0110 12z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </span>
+        </div>
+
+        <div className="relative">
+          <select
+            value={label}
+            onChange={(e) => {
+              setLabel(e.target.value);
+              setTimeout(applyFilters, 0);
+            }}
+            className="h-11 appearance-none bg-surface-secondary border border-subtle rounded-xl px-4 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <option value="">{t('labelsAll')}</option>
+            <option value="new">{t('labelNew')}</option>
+          </select>
+          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+            <svg className="w-4 h-4 text-muted-foreground" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M10 12a1 1 0 01-.707-.293l-3-3a1 1 0 111.414-1.414L10 9.586l2.293-2.293a1 1 0 111.414 1.414l-3 3A1 1 0 0110 12z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </span>
+        </div>
+
+        <button
+          onClick={resetFilters}
+          className="ml-auto h-11 px-4 rounded-xl text-sm font-semibold text-primary-500 hover:text-primary-600">
+          {tCommon('clearAll')}
+        </button>
+      </div>
+    </div>
+  );
+}
