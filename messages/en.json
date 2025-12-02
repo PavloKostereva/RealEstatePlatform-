@@ -85,6 +85,7 @@
     "contactOwner": "Send Message",
     "noImages": "No photos",
     "noListings": "No listings found",
+    "errorLoading": "Error loading listings",
     "loadMore": "Load More",
     "create": "Create Listing",
     "edit": "Edit Listing",

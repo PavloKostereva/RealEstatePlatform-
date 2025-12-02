@@ -1,108 +1,100 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 interface Listing {
-  id: string
-  title: string
-  type: string
-  status: string
-  price: number
-  currency: string
+  id: string;
+  title: string;
+  type: string;
+  status: string;
+  price: number;
+  currency: string;
   owner: {
-    name?: string
-    email: string
-  }
-  createdAt: string
-  images: string[]
+    name?: string;
+    email: string;
+  };
+  createdAt: string;
+  images: string[];
 }
 
 export function AdminListingsList() {
-  const [listings, setListings] = useState<Listing[]>([])
-  const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<string>('all')
-
-  const fetchListings = useCallback(async () => {
-    try {
-      const url = filter === 'all' ? '/api/admin/listings' : `/api/admin/listings?status=${filter}`
-      const res = await fetch(url)
-      if (res.ok) {
-        const data = await res.json()
-        setListings(data)
-      }
-    } catch (error) {
-      console.error('Error fetching listings:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [filter])
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>('all');
 
   useEffect(() => {
-    fetchListings()
-  }, [fetchListings])
+    fetchListings();
+  }, [filter]);
+
+  const fetchListings = async () => {
+    try {
+      const url = filter === 'all' ? '/api/admin/listings' : `/api/admin/listings?status=${filter}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setListings(data);
+      }
+    } catch (error) {
+      console.error('Error fetching listings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleApprove = async (id: string) => {
     try {
       const res = await fetch(`/api/admin/listings/${id}/approve`, {
         method: 'POST',
-      })
+      });
 
       if (res.ok) {
-        setListings(
-          listings.map((l) =>
-            l.id === id ? { ...l, status: 'PUBLISHED' } : l
-          )
-        )
+        setListings(listings.map((l) => (l.id === id ? { ...l, status: 'PUBLISHED' } : l)));
       }
     } catch (error) {
-      console.error('Error approving listing:', error)
+      console.error('Error approving listing:', error);
     }
-  }
+  };
 
   const handleReject = async (id: string) => {
-    if (!confirm('Ви впевнені, що хочете відхилити це оголошення?')) return
+    if (!confirm('Ви впевнені, що хочете відхилити це оголошення?')) return;
 
     try {
       const res = await fetch(`/api/admin/listings/${id}/reject`, {
         method: 'POST',
-      })
+      });
 
       if (res.ok) {
-        setListings(
-          listings.map((l) =>
-            l.id === id ? { ...l, status: 'ARCHIVED' } : l
-          )
-        )
+        setListings(listings.map((l) => (l.id === id ? { ...l, status: 'ARCHIVED' } : l)));
       }
     } catch (error) {
-      console.error('Error rejecting listing:', error)
+      console.error('Error rejecting listing:', error);
     }
-  }
+  };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Ви впевнені, що хочете видалити це оголошення?')) return
+    if (!confirm('Ви впевнені, що хочете видалити це оголошення?')) return;
 
     try {
       const res = await fetch(`/api/listings/${id}`, {
         method: 'DELETE',
-      })
+      });
 
       if (res.ok) {
-        setListings(listings.filter((l) => l.id !== id))
+        setListings(listings.filter((l) => l.id !== id));
       }
     } catch (error) {
-      console.error('Error deleting listing:', error)
+      console.error('Error deleting listing:', error);
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -112,8 +104,7 @@ export function AdminListingsList() {
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-        >
+          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500">
           <option value="all">Всі</option>
           <option value="PENDING_REVIEW">На модерації</option>
           <option value="PUBLISHED">Опубліковані</option>
@@ -127,10 +118,7 @@ export function AdminListingsList() {
           <p className="text-gray-500 text-center py-8">Оголошень не знайдено</p>
         ) : (
           listings.map((listing) => (
-            <div
-              key={listing.id}
-              className="border rounded-lg p-4 hover:shadow-md transition"
-            >
+            <div key={listing.id} className="border rounded-lg p-4 hover:shadow-md transition">
               <div className="flex gap-4">
                 {listing.images?.[0] && (
                   <Link href={`/listings/${listing.id}`}>
@@ -150,8 +138,7 @@ export function AdminListingsList() {
                     <div>
                       <Link
                         href={`/listings/${listing.id}`}
-                        className="text-lg font-semibold hover:text-primary-600 transition"
-                      >
+                        className="text-lg font-semibold hover:text-primary-600 transition">
                         {listing.title}
                       </Link>
                       <p className="text-primary-600 font-bold">
@@ -168,8 +155,7 @@ export function AdminListingsList() {
                             : listing.status === 'DRAFT'
                             ? 'bg-gray-100 text-gray-700'
                             : 'bg-red-100 text-red-700'
-                        }`}
-                      >
+                        }`}>
                         {listing.status === 'PUBLISHED'
                           ? 'Опубліковано'
                           : listing.status === 'PENDING_REVIEW'
@@ -191,22 +177,19 @@ export function AdminListingsList() {
                       <>
                         <button
                           onClick={() => handleApprove(listing.id)}
-                          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
-                        >
+                          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
                           Підтвердити
                         </button>
                         <button
                           onClick={() => handleReject(listing.id)}
-                          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition text-sm"
-                        >
+                          className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition text-sm">
                           Відхилити
                         </button>
                       </>
                     )}
                     <button
                       onClick={() => handleDelete(listing.id)}
-                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
-                    >
+                      className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm">
                       Видалити
                     </button>
                   </div>
@@ -217,9 +200,5 @@ export function AdminListingsList() {
         )}
       </div>
     </div>
-  )
+  );
 }
-
-
-
-

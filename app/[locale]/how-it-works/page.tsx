@@ -7,6 +7,6 @@ export default async function HowItWorksPage({
 }) {
   // Ensure params is resolved
   await (params instanceof Promise ? params : Promise.resolve(params));
-  
+
   return <HowItWorksContent />;
 }

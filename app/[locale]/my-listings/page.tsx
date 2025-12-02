@@ -1,9 +1,9 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { MyListingsPageContent } from '@/components/listings/MyListingsPageContent'
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { MyListingsPageContent } from '@/components/listings/MyListingsPageContent';
 
 export default async function MyListingsPage() {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(authOptions);
 
   return (
     <div className="min-h-screen bg-background">
@@ -11,6 +11,5 @@ export default async function MyListingsPage() {
         <MyListingsPageContent userId={session?.user?.id} />
       </div>
     </div>
-  )
+  );
 }
-

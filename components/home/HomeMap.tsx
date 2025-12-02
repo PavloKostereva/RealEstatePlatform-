@@ -31,24 +31,36 @@ export function HomeMap() {
       if (res.ok) {
         const data = await res.json();
         const publishedListings = data.listings
-          .filter((l: {
-            latitude?: number | null;
-            longitude?: number | null;
-            id: string;
-            title: string;
-            price: number;
-            currency: string;
-            type: string;
-          }) => l.latitude && l.longitude)
-          .map((l) => ({
-            id: l.id,
-            title: l.title,
-            latitude: l.latitude,
-            longitude: l.longitude,
-            price: l.price,
-            currency: l.currency,
-            type: l.type,
-          }));
+          .filter(
+            (l: {
+              latitude?: number | null;
+              longitude?: number | null;
+              id: string;
+              title: string;
+              price: number;
+              currency: string;
+              type: string;
+            }) => l.latitude && l.longitude,
+          )
+          .map(
+            (l: {
+              latitude: number;
+              longitude: number;
+              id: string;
+              title: string;
+              price: number;
+              currency: string;
+              type: string;
+            }) => ({
+              id: l.id,
+              title: l.title,
+              latitude: l.latitude,
+              longitude: l.longitude,
+              price: l.price,
+              currency: l.currency,
+              type: l.type,
+            }),
+          );
         setListings(publishedListings);
 
         // Don't auto-center on listings - let user control the map

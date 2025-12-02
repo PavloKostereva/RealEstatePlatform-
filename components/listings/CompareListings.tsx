@@ -39,31 +39,33 @@ export function CompareListings() {
       const res = await fetch('/api/saved');
       if (res.ok) {
         const data = await res.json();
-        const savedListings: Listing[] = data.map((item: {
-          listing: {
-            id: string;
-            title: string;
-            price: number;
-            currency: string;
-            area?: number | null;
-            rooms?: number | null;
-            address: string;
-            images?: string[] | null;
-            type: string;
-            category: string;
-          };
-        }) => ({
-          id: item.listing.id,
-          title: item.listing.title,
-          price: item.listing.price,
-          currency: item.listing.currency,
-          area: item.listing.area,
-          rooms: item.listing.rooms,
-          address: item.listing.address,
-          images: item.listing.images || [],
-          type: item.listing.type,
-          category: item.listing.category,
-        }));
+        const savedListings: Listing[] = data.map(
+          (item: {
+            listing: {
+              id: string;
+              title: string;
+              price: number;
+              currency: string;
+              area?: number | null;
+              rooms?: number | null;
+              address: string;
+              images?: string[] | null;
+              type: string;
+              category: string;
+            };
+          }) => ({
+            id: item.listing.id,
+            title: item.listing.title,
+            price: item.listing.price,
+            currency: item.listing.currency,
+            area: item.listing.area,
+            rooms: item.listing.rooms,
+            address: item.listing.address,
+            images: item.listing.images || [],
+            type: item.listing.type,
+            category: item.listing.category,
+          }),
+        );
         setListings(savedListings);
       }
     } catch (error) {
@@ -104,8 +106,7 @@ export function CompareListings() {
           <p className="text-muted-foreground text-lg mb-4">{t('signInRequired')}</p>
           <Link
             href={`/${locale}/profile`}
-            className="inline-block bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition"
-          >
+            className="inline-block bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition">
             {t('signIn')}
           </Link>
         </div>
@@ -128,8 +129,7 @@ export function CompareListings() {
           <p className="text-muted-foreground text-lg mb-4">{t('noListings')}</p>
           <Link
             href={`/${locale}/listings`}
-            className="inline-block bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition"
-          >
+            className="inline-block bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition">
             {t('viewMoreListings')}
           </Link>
         </div>
@@ -157,14 +157,16 @@ export function CompareListings() {
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">{t('title')}</h1>
           <p className="text-muted-foreground">
-            {t('subtitle', { count: listings.length, listing: listings.length === 1 ? 'listing' : 'listings' })}
+            {t('subtitle', {
+              count: listings.length,
+              listing: listings.length === 1 ? 'listing' : 'listings',
+            })}
           </p>
         </div>
         <div className="flex gap-3">
           <button
             onClick={clearAll}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition"
-          >
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
@@ -177,8 +179,7 @@ export function CompareListings() {
           </button>
           <Link
             href={`/${locale}/listings`}
-            className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition"
-          >
+            className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition">
             {t('viewMoreListings')}
           </Link>
         </div>
@@ -212,7 +213,9 @@ export function CompareListings() {
             </thead>
             <tbody>
               {listings.map((listing) => (
-                <tr key={listing.id} className="border-b border-subtle hover:bg-surface-secondary/50 transition">
+                <tr
+                  key={listing.id}
+                  className="border-b border-subtle hover:bg-surface-secondary/50 transition">
                   <td className="p-4">
                     <div className="flex items-start gap-3">
                       <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-surface-secondary">
@@ -234,8 +237,12 @@ export function CompareListings() {
                         <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-surface-secondary text-muted-foreground mb-2">
                           {categoryLabels[listing.category] || listing.category}
                         </span>
-                        <h3 className="font-semibold text-foreground mb-1 line-clamp-2">{listing.title}</h3>
-                        <p className="text-sm text-muted-foreground">{categoryLabels[listing.category] || listing.category}</p>
+                        <h3 className="font-semibold text-foreground mb-1 line-clamp-2">
+                          {listing.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {categoryLabels[listing.category] || listing.category}
+                        </p>
                       </div>
                     </div>
                   </td>
@@ -254,14 +261,23 @@ export function CompareListings() {
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        className="w-4 h-4 text-muted-foreground"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
                           d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
                         />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
                       </svg>
                       <p className="text-sm text-foreground line-clamp-1">{listing.address}</p>
                     </div>
@@ -274,13 +290,11 @@ export function CompareListings() {
                       <button
                         onClick={() => removeFromComparison(listing.id)}
                         className="w-10 h-10 rounded-lg bg-surface-secondary hover:bg-red-500/20 flex items-center justify-center transition group"
-                        aria-label={t('removeFromComparison')}
-                      >
+                        aria-label={t('removeFromComparison')}>
                         <svg
                           className="w-5 h-5 text-red-500 group-hover:text-red-600"
                           fill="currentColor"
-                          viewBox="0 0 24 24"
-                        >
+                          viewBox="0 0 24 24">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -292,9 +306,12 @@ export function CompareListings() {
                       <Link
                         href={`/${locale}/listings/${listing.id}`}
                         className="w-10 h-10 rounded-lg bg-primary-600 hover:bg-primary-700 flex items-center justify-center transition"
-                        aria-label={t('viewListing')}
-                      >
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        aria-label={t('viewListing')}>
+                        <svg
+                          className="w-5 h-5 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -319,7 +336,8 @@ export function CompareListings() {
             {t('priceRange')}
           </h3>
           <p className="text-2xl font-bold text-foreground mb-1">
-            {minPrice.toLocaleString()} {listings[0]?.currency} - {maxPrice.toLocaleString()} {listings[0]?.currency}
+            {minPrice.toLocaleString()} {listings[0]?.currency} - {maxPrice.toLocaleString()}{' '}
+            {listings[0]?.currency}
           </p>
           <p className="text-sm text-muted-foreground">{t('perMonth')}</p>
         </div>
@@ -347,4 +365,3 @@ export function CompareListings() {
     </div>
   );
 }
-
