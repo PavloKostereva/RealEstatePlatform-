@@ -334,17 +334,74 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
     }));
   };
 
+  // SVG іконки для навігації
+  const getIcon = (label: string) => {
+    const iconClass = 'w-5 h-5';
+    switch (label) {
+      case 'Dashboard':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+          </svg>
+        );
+      case 'Documents':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        );
+      case 'Payments':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        );
+      case 'Calendar':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        );
+      case 'My Profile':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        );
+      case 'Messages':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        );
+      case 'Bookings':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        );
+      case 'Compare Favorites':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
   const navItems = [
-    { label: 'Dashboard', icon: '📊', ref: topRef, active: true },
-    { label: 'Documents', icon: '📄', ref: documentsRef },
-    { label: 'Payments', icon: '💳', ref: quickActionsRef },
-    { label: 'Calendar', icon: '📅', ref: bookingsRef },
-    { label: 'My Profile', icon: '👤', ref: personalInfoRef },
-    { label: 'Messages', icon: '💬', ref: messagesRef },
-    { label: 'Bookings', icon: '📅', ref: bookingsRef },
+    { label: 'Dashboard', icon: getIcon('Dashboard'), ref: topRef, active: true },
+    { label: 'Documents', icon: getIcon('Documents'), ref: documentsRef },
+    { label: 'Payments', icon: getIcon('Payments'), ref: quickActionsRef },
+    { label: 'Calendar', icon: getIcon('Calendar'), ref: bookingsRef },
+    { label: 'My Profile', icon: getIcon('My Profile'), ref: personalInfoRef },
+    { label: 'Messages', icon: getIcon('Messages'), ref: messagesRef },
+    { label: 'Bookings', icon: getIcon('Bookings'), ref: bookingsRef },
     {
       label: 'Compare Favorites',
-      icon: '❤️',
+      icon: getIcon('Compare Favorites'),
       action: () => router.push(`/${locale}/listings/compare`),
     },
   ];
@@ -375,7 +432,9 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
 
           <div className="mt-auto space-y-2 pt-4 border-t border-subtle">
             <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
-              <span>🌞</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
               <span>Theme: Dark</span>
             </div>
             <ThemeToggle />
@@ -646,7 +705,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 onClick={() => toggleSection('messages')}
                 className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">💬</span>
                   <h3 className="text-lg font-semibold text-foreground">Messages</h3>
                 </div>
                 <span className="text-muted-foreground text-xl transition-transform duration-200">
@@ -672,7 +730,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 onClick={() => toggleSection('support')}
                 className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">💬</span>
                   <h3 className="text-lg font-semibold text-foreground">Support</h3>
                 </div>
                 <span className="text-muted-foreground text-xl transition-transform duration-200">
@@ -689,7 +746,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                         <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 text-center">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
-                              <span className="text-2xl">💬</span>
                               <h3 className="text-lg font-semibold text-foreground">Support</h3>
                             </div>
                             <button
@@ -705,7 +761,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                           <button
                             onClick={() => setShowSupportChat(true)}
                             className="w-full h-12 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 flex items-center justify-center gap-2">
-                            <span className="text-xl">💬</span>
                             Contact Support
                           </button>
                         </div>

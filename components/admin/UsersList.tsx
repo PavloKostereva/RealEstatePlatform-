@@ -118,7 +118,7 @@ export function UsersList() {
                   </span>
                   {user.ownerVerified && (
                     <span className="ml-2 bg-green-100 text-green-700 px-2 py-1 rounded text-sm">
-                      ✓
+                      Verified
                     </span>
                   )}
                 </td>

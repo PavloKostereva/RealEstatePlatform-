@@ -65,7 +65,7 @@ export function SaveListingButton({ listingId }: SaveListingButtonProps) {
           ? 'bg-primary-600 text-white hover:bg-primary-700'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
       } disabled:opacity-50 disabled:cursor-not-allowed`}>
-      {loading ? '...' : isSavedState ? '✓ Збережено' : 'Зберегти'}
+      {loading ? '...' : isSavedState ? 'Збережено' : 'Зберегти'}
     </button>
   );
 }

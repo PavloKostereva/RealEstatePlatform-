@@ -158,7 +158,6 @@ export function AdminSupportChat() {
       {/* Header */}
       <div className="bg-surface-secondary px-6 py-4 border-b border-subtle flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-xl">💬</span>
           <h3 className="text-lg font-semibold text-foreground">Support Chat</h3>
         </div>
         {selectedConversation && selectedConversation.status === 'open' && (
@@ -195,7 +194,7 @@ export function AdminSupportChat() {
                     }`}>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold">
-                        💬
+                        S
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
@@ -282,7 +281,7 @@ export function AdminSupportChat() {
                     onClick={sendMessage}
                     disabled={!newMessage.trim() || sending}
                     className="h-11 w-11 rounded-xl bg-surface-secondary border border-subtle text-foreground hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
-                    <span className="text-lg">✈️</span>
+                    <span className="text-lg">→</span>
                   </button>
                 </div>
               </div>
@@ -290,7 +289,6 @@ export function AdminSupportChat() {
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
-                <div className="text-4xl mb-4">💬</div>
                 <p>Select a conversation to start chatting</p>
               </div>
             </div>

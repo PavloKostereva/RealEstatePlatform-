@@ -60,7 +60,7 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
 
   const socialButtons = [
     { label: 'Google', icon: 'G', onClick: handleGoogleSignIn },
-    { label: 'Discord', icon: '💬', onClick: handleDiscordSignIn },
+    { label: 'Discord', icon: 'D', onClick: handleDiscordSignIn },
     { label: 'LinkedIn', icon: 'in', onClick: handleLinkedInSignIn },
   ];
 

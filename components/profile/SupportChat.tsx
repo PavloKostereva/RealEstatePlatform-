@@ -159,7 +159,6 @@ export function SupportChat({ onClose }: SupportChatProps) {
       {/* Header */}
       <div className="bg-surface-secondary px-6 py-4 border-b border-subtle flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-xl">💬</span>
           <h3 className="text-lg font-semibold text-foreground">Support Chat</h3>
         </div>
         {onClose && (
@@ -179,7 +178,6 @@ export function SupportChat({ onClose }: SupportChatProps) {
               {messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
                   <div className="text-center">
-                    <div className="text-4xl mb-4">💬</div>
                     <p>No messages yet. Start the conversation!</p>
                   </div>
                 </div>
@@ -230,7 +228,7 @@ export function SupportChat({ onClose }: SupportChatProps) {
                   onClick={sendMessage}
                   disabled={!newMessage.trim() || sending}
                   className="h-11 w-11 rounded-xl bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition">
-                  <span className="text-lg">✈️</span>
+                  <span className="text-lg">→</span>
                 </button>
               </div>
             </div>
