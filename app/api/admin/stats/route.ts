@@ -10,12 +10,12 @@ export async function GET(request?: NextRequest) {
     // Отримуємо headers
     const headersList = headers();
     const cookieHeader = headersList.get('cookie') || '';
-    
+
     console.log('Admin stats API - Request info:', {
       hasCookie: !!cookieHeader,
       cookieLength: cookieHeader.length,
     });
-    
+
     const session = await getServerSession({
       ...authOptions,
       req: { headers: Object.fromEntries(headersList.entries()) } as any,

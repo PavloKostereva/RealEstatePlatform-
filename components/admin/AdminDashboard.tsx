@@ -303,9 +303,7 @@ export function AdminDashboard() {
 
     return (
       <div className="flex flex-wrap items-center gap-4 justify-between mt-6">
-        <div className="text-muted-foreground text-sm">
-          Total: {getTotal()}
-        </div>
+        <div className="text-muted-foreground text-sm">Total: {getTotal()}</div>
         <div className="flex gap-3">
           <button
             onClick={refreshData}

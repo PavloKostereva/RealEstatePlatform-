@@ -9,19 +9,19 @@ export async function GET(request: NextRequest) {
     // Отримуємо headers з request
     const requestHeaders = new Headers(request.headers);
     const cookieHeader = requestHeaders.get('cookie') || '';
-    
+
     console.log('Admin listings API - Request info:', {
       hasCookie: !!cookieHeader,
       cookieLength: cookieHeader.length,
       cookiePreview: cookieHeader.substring(0, 50),
       url: request.url,
     });
-    
+
     // Створюємо об'єкт req для getServerSession
     const req = {
       headers: Object.fromEntries(requestHeaders.entries()),
     } as any;
-    
+
     const session = await getServerSession({
       ...authOptions,
       req,

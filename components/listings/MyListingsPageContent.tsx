@@ -138,12 +138,12 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
       }
 
       const data = await response.json();
-      
+
       if (data && data.address) {
         const addr = data.address;
         // Формуємо адресу з доступних компонентів
         const addressParts = [];
-        
+
         if (addr.road || addr.street) {
           addressParts.push(addr.road || addr.street);
         }
@@ -156,10 +156,10 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
         if (addr.country) {
           addressParts.push(addr.country);
         }
-        
+
         return addressParts.length > 0 ? addressParts.join(', ') : data.display_name || '';
       }
-      
+
       return data.display_name || '';
     } catch (error) {
       console.error('Error fetching address:', error);
@@ -417,7 +417,12 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
               <div className="flex items-center gap-3">
                 <label className="px-4 py-2 rounded-xl bg-surface-secondary border border-subtle hover:border-primary-400 cursor-pointer flex items-center gap-2 transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
                   </svg>
                   Upload Photos
                   <input

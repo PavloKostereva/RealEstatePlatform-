@@ -89,15 +89,14 @@ export default function AdminDashboardGate() {
         <button
           type="submit"
           disabled={updatingRole}
-          className="w-full h-11 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+          className="w-full h-11 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed">
           {updatingRole ? 'Оновлення ролі...' : 'Unlock Dashboard'}
         </button>
       </form>
       <p className="text-xs text-muted-foreground">
-        * Default demo password: <code className="bg-surface-secondary px-2 py-1 rounded">{ADMIN_PASS}</code>
+        * Default demo password:{' '}
+        <code className="bg-surface-secondary px-2 py-1 rounded">{ADMIN_PASS}</code>
       </p>
     </div>
   );
 }
-
