@@ -254,60 +254,66 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
         </div>
 
         {/* Map Modal */}
-        {showMapModal && listing.latitude && listing.longitude && (
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
-            onClick={() => setShowMapModal(false)}>
+        {mounted &&
+          showMapModal &&
+          listing.latitude &&
+          listing.longitude &&
+          typeof document !== 'undefined' &&
+          createPortal(
             <div
-              className="relative bg-surface rounded-2xl shadow-2xl w-full max-w-6xl h-[80vh] m-4 flex flex-col z-[10000]"
-              onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between p-4 border-b border-subtle">
-                <h3 className="text-lg font-semibold text-foreground">{listing.title}</h3>
-                <button
-                  onClick={() => setShowMapModal(false)}
-                  className="w-8 h-8 rounded-lg bg-surface-secondary hover:bg-subtle flex items-center justify-center text-foreground transition">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+              onClick={() => setShowMapModal(false)}>
+              <div
+                className="relative bg-surface rounded-2xl shadow-2xl w-full max-w-6xl h-[80vh] m-4 flex flex-col"
+                onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-4 border-b border-subtle">
+                  <h3 className="text-lg font-semibold text-foreground">{listing.title}</h3>
+                  <button
+                    onClick={() => setShowMapModal(false)}
+                    className="w-8 h-8 rounded-lg bg-surface-secondary hover:bg-subtle flex items-center justify-center text-foreground transition">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex-1 relative">
+                  <MapView
+                    latitude={listing.latitude}
+                    longitude={listing.longitude}
+                    zoom={15}
+                    markers={[
+                      {
+                        id: listing.id,
+                        latitude: listing.latitude,
+                        longitude: listing.longitude,
+                        title: listing.title,
+                        address: listing.address,
+                        price: listing.price,
+                        currency: listing.currency,
+                        images: listing.images,
+                      },
+                    ]}
+                    onMarkerClick={(marker) => {
+                      window.location.href = listingUrl;
+                    }}
+                  />
+                </div>
+                <div className="p-4 border-t border-subtle bg-surface-secondary">
+                  <p className="text-sm text-muted-foreground mb-2">{listing.address}</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {listing.price.toLocaleString()} {listing.currency}
+                    {listing.area && ` • ${listing.area} m²`}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 relative">
-                <MapView
-                  latitude={listing.latitude}
-                  longitude={listing.longitude}
-                  zoom={15}
-                  markers={[
-                    {
-                      id: listing.id,
-                      latitude: listing.latitude,
-                      longitude: listing.longitude,
-                      title: listing.title,
-                      address: listing.address,
-                      price: listing.price,
-                      currency: listing.currency,
-                      images: listing.images,
-                    },
-                  ]}
-                  onMarkerClick={(marker) => {
-                    window.location.href = listingUrl;
-                  }}
-                />
-              </div>
-              <div className="p-4 border-t border-subtle bg-surface-secondary">
-                <p className="text-sm text-muted-foreground mb-2">{listing.address}</p>
-                <p className="text-sm font-semibold text-foreground">
-                  {listing.price.toLocaleString()} {listing.currency}
-                  {listing.area && ` • ${listing.area} m²`}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+            </div>,
+            document.body,
+          )}
       </>
     );
   }
