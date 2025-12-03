@@ -51,11 +51,31 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
   const toast = useToast();
   const [isSaved, setIsSaved] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Keyboard navigation for image gallery
+  useEffect(() => {
+    if (!showImageModal || !listing.images || listing.images.length <= 1) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        setSelectedImageIndex((prev) => (prev === 0 ? listing.images.length - 1 : prev - 1));
+      } else if (e.key === 'ArrowRight') {
+        setSelectedImageIndex((prev) => (prev === listing.images.length - 1 ? 0 : prev + 1));
+      } else if (e.key === 'Escape') {
+        setShowImageModal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showImageModal, listing.images]);
 
   // Мемоізуємо обчислення
   const imageUrl = useMemo(() => listing.images?.[0] || null, [listing.images]);
@@ -143,17 +163,48 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
         <div className="bg-surface rounded-lg border border-subtle overflow-hidden hover:border-primary-400 hover:bg-accent/50 transition-colors cursor-pointer relative">
           <div className="flex gap-3 p-3">
             <Link href={listingUrl} className="flex gap-3 flex-1 min-w-0" prefetch={true}>
-              <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-surface-secondary">
+              <div
+                className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-surface-secondary group cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (listing.images && listing.images.length > 0) {
+                    setSelectedImageIndex(0);
+                    setShowImageModal(true);
+                  }
+                }}>
                 {imageUrl ? (
-                  <Image
-                    src={imageUrl}
-                    alt={listing.title}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                    loading="lazy"
-                    quality={75}
-                  />
+                  <>
+                    <Image
+                      src={imageUrl}
+                      alt={listing.title}
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                      sizes="64px"
+                      loading="lazy"
+                      quality={75}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                      <svg
+                        className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full bg-surface-secondary flex items-center justify-center">
                     <span className="text-muted-foreground text-xs">{t('noImages')}</span>
@@ -323,18 +374,49 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
       <Link href={listingUrl} prefetch={true}>
         <div className="bg-surface rounded-xl border border-subtle overflow-hidden hover:border-primary-400 hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full">
           {/* Image section */}
-          <div className="relative w-full h-48 bg-surface-secondary">
+          <div
+            className="relative w-full h-48 bg-surface-secondary group cursor-pointer"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (listing.images && listing.images.length > 0) {
+                setSelectedImageIndex(0);
+                setShowImageModal(true);
+              }
+            }}>
             {imageUrl ? (
-              <Image
-                src={imageUrl}
-                alt={listing.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                loading={priority ? 'eager' : 'lazy'}
-                priority={priority}
-                quality={80}
-              />
+              <>
+                <Image
+                  src={imageUrl}
+                  alt={listing.title}
+                  fill
+                  className="object-cover transition-transform group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  loading={priority ? 'eager' : 'lazy'}
+                  priority={priority}
+                  quality={80}
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                  <svg
+                    className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                </div>
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <span className="text-muted-foreground text-sm">{t('noImages')}</span>
@@ -481,6 +563,135 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
                   {listing.area && ` • ${listing.area} m²`}
                 </p>
               </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* Image Gallery Modal */}
+      {mounted &&
+        showImageModal &&
+        listing.images &&
+        listing.images.length > 0 &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+            onClick={() => setShowImageModal(false)}>
+            <div
+              className="relative w-full h-full max-w-7xl max-h-[90vh] m-4 flex flex-col"
+              onClick={(e) => e.stopPropagation()}>
+              {/* Close button */}
+              <button
+                onClick={() => setShowImageModal(false)}
+                className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+
+              {/* Main image */}
+              <div className="flex-1 relative flex items-center justify-center min-h-0 p-4">
+                {listing.images[selectedImageIndex] && (
+                  <div className="relative w-full h-full flex items-center justify-center">
+                    <Image
+                      src={listing.images[selectedImageIndex]}
+                      alt={`${listing.title} - Image ${selectedImageIndex + 1}`}
+                      fill
+                      className="object-contain"
+                      sizes="90vw"
+                      quality={95}
+                    />
+                  </div>
+                )}
+
+                {/* Navigation arrows */}
+                {listing.images.length > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImageIndex((prev) =>
+                          prev === 0 ? listing.images.length - 1 : prev - 1,
+                        );
+                      }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition z-10">
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImageIndex((prev) =>
+                          prev === listing.images.length - 1 ? 0 : prev + 1,
+                        );
+                      }}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center text-white transition z-10">
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                  </>
+                )}
+
+                {/* Image counter */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm">
+                  {selectedImageIndex + 1} / {listing.images.length}
+                </div>
+              </div>
+
+              {/* Thumbnail strip */}
+              {listing.images.length > 1 && (
+                <div className="h-24 bg-black/40 p-2 overflow-x-auto">
+                  <div className="flex gap-2 h-full justify-center">
+                    {listing.images.map((img, idx) => (
+                      <button
+                        key={idx}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedImageIndex(idx);
+                        }}
+                        className={`relative h-full w-24 flex-shrink-0 rounded overflow-hidden border-2 transition ${
+                          selectedImageIndex === idx
+                            ? 'border-white scale-105'
+                            : 'border-transparent opacity-60 hover:opacity-100'
+                        }`}>
+                        <Image
+                          src={img}
+                          alt={`Thumbnail ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                          sizes="96px"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>,
           document.body,
