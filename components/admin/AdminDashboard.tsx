@@ -340,9 +340,7 @@ export function AdminDashboard() {
 
     return (
       <div className="flex items-center gap-4 justify-between min-h-[44px]">
-        <div className="text-muted-foreground text-sm whitespace-nowrap">
-          Total: {getTotal()}
-        </div>
+        <div className="text-muted-foreground text-sm whitespace-nowrap">Total: {getTotal()}</div>
         <div className="flex gap-3 flex-shrink-0">
           <button
             onClick={refreshData}
@@ -794,7 +792,7 @@ export function AdminDashboard() {
 
     // Заголовки CSV
     const headers = ['ID', 'Email', 'IBAN', 'Created At'];
-    
+
     // Конвертуємо дані в CSV формат
     const csvRows = [
       headers.join(','),
@@ -809,22 +807,22 @@ export function AdminDashboard() {
     ];
 
     const csvContent = csvRows.join('\n');
-    
+
     // Створюємо Blob з CSV даними
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     // Встановлюємо назву файлу з поточною датою
     const fileName = `iban-submissions-${new Date().toISOString().split('T')[0]}.csv`;
-    
+
     link.setAttribute('href', url);
     link.setAttribute('download', fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast.success('IBAN submissions exported successfully');
   };
 
@@ -916,9 +914,7 @@ export function AdminDashboard() {
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-subtle pb-4 mb-6 -mx-4 px-4 pt-4">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
           <h1 className="text-3xl font-bold whitespace-nowrap">Admin Dashboard</h1>
-          <div className="flex-shrink-0">
-            {renderTabs()}
-          </div>
+          <div className="flex-shrink-0">{renderTabs()}</div>
         </div>
         {renderSummary()}
       </div>

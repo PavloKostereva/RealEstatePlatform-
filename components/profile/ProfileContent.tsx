@@ -74,7 +74,13 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   const [activeBookingTab, setActiveBookingTab] = useState<'my-bookings' | 'for-listings'>(
     'my-bookings',
   );
-  const [editData, setEditData] = useState({ name: '', phone: '', location: '', bio: '', iban: '' });
+  const [editData, setEditData] = useState({
+    name: '',
+    phone: '',
+    location: '',
+    bio: '',
+    iban: '',
+  });
   const [expandedSections, setExpandedSections] = useState({
     personalInfo: false,
     documents: false,
