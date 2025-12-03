@@ -325,12 +325,12 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   );
   // Розрахунок заробітків на основі опублікованих listings
   const publishedListings = listings.filter((l) => l.status === 'PUBLISHED');
-  
+
   // Розрахунок заробітків за різні періоди
   const calculateEarnings = (period: 'month' | 'quarter' | 'year') => {
     const now = new Date();
     let startDate: Date;
-    
+
     switch (period) {
       case 'month':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -343,59 +343,73 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
         startDate = new Date(now.getFullYear(), 0, 1);
         break;
     }
-    
+
     // Фільтруємо listings, створені в цьому періоді
     const periodListings = publishedListings.filter((listing) => {
       const listingDate = new Date(listing.createdAt || listing.updatedAt);
       return listingDate >= startDate;
     });
-    
+
     // Розраховуємо суму (можна додати комісію, наприклад 10%)
     const total = periodListings.reduce((sum, listing) => sum + (listing.price || 0), 0);
     const commission = 0.1; // 10% комісія платформи
     return total * (1 - commission);
   };
-  
+
   const earnings = calculateEarnings(earningsPeriod);
-  
+
   // Дані для графіка (останні 5 місяців)
   const getChartData = () => {
     const months = [];
     const now = new Date();
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
     for (let i = 4; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthName = monthNames[date.getMonth()];
-      
+
       // Розраховуємо заробітки за цей місяць
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
-      
+
       const monthListings = publishedListings.filter((listing) => {
         const listingDate = new Date(listing.createdAt || listing.updatedAt);
         return listingDate >= monthStart && listingDate <= monthEnd;
       });
-      
-      const monthEarnings = monthListings.reduce((sum, listing) => sum + (listing.price || 0), 0) * 0.9;
+
+      const monthEarnings =
+        monthListings.reduce((sum, listing) => sum + (listing.price || 0), 0) * 0.9;
       months.push({ name: monthName, earnings: monthEarnings });
     }
-    
+
     // Розраховуємо максимальне значення для нормалізації висоти
     const maxEarnings = Math.max(...months.map((m) => m.earnings), 1);
-    
+
     // Додаємо висоту для кожного місяця (мінімум 5% для візуалізації)
     return months.map((month) => ({
       ...month,
       height: maxEarnings > 0 ? Math.max((month.earnings / maxEarnings) * 100, 5) : 5,
     }));
   };
-  
+
   const chartData = getChartData();
-  
-  const currencyFormatter = new Intl.NumberFormat('en-US', { 
-    style: 'currency', 
-    currency: publishedListings[0]?.currency || 'EUR' 
+
+  const currencyFormatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: publishedListings[0]?.currency || 'EUR',
   });
   const affiliateCode =
     (user.id || 'REAL-USER')
@@ -1115,8 +1129,17 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                           toast.success('Affiliate code copied');
                         }}
                         title="Copy code">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                          />
                         </svg>
                       </button>
                       <button
@@ -1132,8 +1155,17 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                           }
                         }}
                         title="Copy link">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                          />
                         </svg>
                       </button>
                     </div>
@@ -1187,7 +1219,8 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 {currencyFormatter.format(earnings || 0)}
               </p>
               <p className="text-xs text-muted-foreground mb-3">
-                Based on {publishedListings.length} published {publishedListings.length === 1 ? 'listing' : 'listings'}
+                Based on {publishedListings.length} published{' '}
+                {publishedListings.length === 1 ? 'listing' : 'listings'}
               </p>
               <div className="h-24 bg-surface-secondary rounded-xl flex items-end justify-between p-2 gap-1">
                 {chartData.map((data, idx) => (
