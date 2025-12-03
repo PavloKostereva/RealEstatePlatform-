@@ -218,7 +218,6 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
                       d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                   </svg>
-                  View on map
                 </button>
               )}
               <button
