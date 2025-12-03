@@ -1,13 +1,18 @@
-import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { headers } from 'next/headers';
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
+    const headersList = headers();
+    const session = await getServerSession({
+      ...authOptions,
+      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+    });
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const users = await prisma.user.findMany({
@@ -22,20 +27,11 @@ export async function GET() {
         ownerVerified: true,
         createdAt: true,
       },
-    })
+    });
 
-    return NextResponse.json(users)
+    return NextResponse.json(users);
   } catch (error) {
-    console.error('Error fetching users:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    )
+    console.error('Error fetching users:', error);
+    return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
 }
-
-
-
-
-
-

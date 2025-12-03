@@ -154,11 +154,11 @@ export function AdminSupportChat() {
   }
 
   return (
-    <div className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden flex flex-col h-[600px]">
-      {/* Header */}
-      <div className="bg-surface-secondary px-6 py-4 border-b border-subtle flex items-center justify-between">
+    <div className="flex flex-col min-h-[600px]">
+      {/* Header with close button */}
+      <div className="px-6 py-4 border-b border-subtle flex items-center justify-between bg-surface-secondary">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold text-foreground">Support Chat</h3>
+          <h3 className="text-sm font-semibold text-foreground">Support Chat</h3>
         </div>
         {selectedConversation && selectedConversation.status === 'open' && (
           <button
@@ -169,7 +169,7 @@ export function AdminSupportChat() {
         )}
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-[500px]">
         {/* Список розмов */}
         <div className="w-1/3 border-r border-subtle bg-surface-secondary flex flex-col">
           <div className="p-4 border-b border-subtle">
@@ -241,7 +241,9 @@ export function AdminSupportChat() {
                   messages.map((message) => {
                     const isOwn = message.sender_id === session?.user.id;
                     return (
-                      <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <div
+                        key={message.id}
+                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                         <div
                           className={`max-w-[70%] rounded-2xl px-4 py-2 ${
                             isOwn

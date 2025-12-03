@@ -2,13 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getSupabaseClient } from '@/lib/supabase'
+import { headers } from 'next/headers'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const headersList = headers()
+    const resolvedParams = params instanceof Promise ? await params : params
+    const session = await getServerSession({
+      ...authOptions,
+      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+    })
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -37,7 +43,7 @@ export async function POST(
     const { data: listing, error } = await supabase
       .from(actualTableName)
       .update({ status: 'PUBLISHED' })
-      .eq('id', params.id)
+      .eq('id', resolvedParams.id)
       .select('*')
       .single()
 

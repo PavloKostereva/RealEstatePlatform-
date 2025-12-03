@@ -156,7 +156,7 @@ export function CreateListingForm() {
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder={t('placeholders.title')}
               />
             </div>
@@ -168,7 +168,7 @@ export function CreateListingForm() {
                 rows={6}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder={t('placeholders.description')}
               />
             </div>
@@ -207,7 +207,7 @@ export function CreateListingForm() {
                   min="0"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="0"
                 />
               </div>
@@ -217,7 +217,7 @@ export function CreateListingForm() {
                 <select
                   value={formData.currency}
                   onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                  className="w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500">
+                  className="w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
                   <option value="USD">USD</option>
                   <option value="EUR">EUR</option>
                   <option value="UAH">UAH</option>
@@ -231,7 +231,7 @@ export function CreateListingForm() {
                   min="0"
                   value={formData.rooms}
                   onChange={(e) => setFormData({ ...formData, rooms: e.target.value })}
-                  className="w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="2"
                 />
               </div>
@@ -245,7 +245,7 @@ export function CreateListingForm() {
                   min="0"
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                  className="w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder="50"
                 />
               </div>
@@ -257,7 +257,7 @@ export function CreateListingForm() {
                   required
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
                   placeholder={t('placeholders.address')}
                 />
               </div>

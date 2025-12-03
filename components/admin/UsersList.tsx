@@ -25,7 +25,9 @@ export function UsersList() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/admin/users')
+      const res = await fetch('/api/admin/users', {
+        credentials: 'include',
+      })
       if (res.ok) {
         const data = await res.json()
         setUsers(data)
@@ -48,6 +50,7 @@ export function UsersList() {
     try {
       const res = await fetch(`/api/admin/users/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (res.ok) {

@@ -20,6 +20,7 @@ interface Listing {
   address: string;
   status: string;
   createdAt: string;
+  images?: string[];
   owner?: {
     id: string;
     name?: string | null;
@@ -82,6 +83,7 @@ export function AdminDashboard() {
     createForm: false,
     filters: true,
     listingsTable: true,
+    support: true,
   });
 
   const [formData, setFormData] = useState({
@@ -210,7 +212,10 @@ export function AdminDashboard() {
 
   const handleApproveListing = async (id: string) => {
     try {
-      const res = await fetch(`/api/admin/listings/${id}/approve`, { method: 'POST' });
+      const res = await fetch(`/api/admin/listings/${id}/approve`, {
+        method: 'POST',
+        credentials: 'include',
+      });
       if (!res.ok) {
         const error = await res.json();
         throw new Error(error.error || 'Failed to approve listing');
@@ -288,25 +293,34 @@ export function AdminDashboard() {
     </div>
   );
 
-  const renderSummary = () => (
-    <div className="flex flex-wrap items-center gap-4 justify-between mt-6">
-      <div className="text-muted-foreground text-sm">
-        Total: {activeTab === 'approvals' ? pendingListings.length : stats?.totalListings ?? 0}
+  const renderSummary = () => {
+    const getTotal = () => {
+      if (activeTab === 'approvals') return pendingListings.length;
+      if (activeTab === 'support') return supportConversationsMock.length;
+      if (activeTab === 'iban') return ibanSubmissionsMock.length;
+      return stats?.totalListings ?? 0;
+    };
+
+    return (
+      <div className="flex flex-wrap items-center gap-4 justify-between mt-6">
+        <div className="text-muted-foreground text-sm">
+          Total: {getTotal()}
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={refreshData}
+            className="h-10 px-4 rounded-xl border border-subtle bg-surface-secondary text-sm text-foreground hover:border-primary-400">
+            Refresh
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="h-10 px-4 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700">
+            Sign out
+          </button>
+        </div>
       </div>
-      <div className="flex gap-3">
-        <button
-          onClick={refreshData}
-          className="h-10 px-4 rounded-xl border border-subtle bg-surface-secondary text-sm text-foreground hover:border-primary-400">
-          Refresh
-        </button>
-        <button
-          onClick={handleSignOut}
-          className="h-10 px-4 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700">
-          Sign out
-        </button>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderFeatureChip = (feature: string, idx: number) => {
     const active = formData.features.includes(feature);
@@ -614,7 +628,21 @@ export function AdminDashboard() {
               <tr key={item.id} className="border-b border-subtle/60 last:border-none">
                 <td className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-surface-secondary border border-subtle" />
+                    {item.images && item.images.length > 0 && item.images[0] ? (
+                      <div className="relative h-10 w-10 rounded-lg overflow-hidden flex-shrink-0 border border-subtle">
+                        <Image
+                          src={item.images[0]}
+                          alt={item.title}
+                          fill
+                          className="object-cover"
+                          sizes="40px"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-10 w-10 rounded-lg bg-surface-secondary border border-subtle flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">No img</span>
+                      </div>
+                    )}
                     <div>
                       <Link
                         href={`/listings/${item.id}`}
@@ -694,7 +722,31 @@ export function AdminDashboard() {
   };
 
   const renderSupport = () => {
-    return <AdminSupportChat />;
+    return (
+      <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
+        <div className="bg-surface-secondary px-6 py-4 border-b border-subtle">
+          <button
+            onClick={() => toggleSection('support')}
+            className="flex items-center gap-2 flex-1 text-left w-full">
+            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <span className="text-primary-400 text-xl">💬</span> Support Chat
+            </h3>
+            <span className="text-muted-foreground text-xl transition-transform duration-200 ml-auto">
+              {expandedSections.support !== undefined
+                ? expandedSections.support
+                  ? '▼'
+                  : '▶'
+                : '▼'}
+            </span>
+          </button>
+        </div>
+        {(expandedSections.support !== undefined ? expandedSections.support : true) && (
+          <div className="transition-all duration-300 ease-in-out">
+            <AdminSupportChat />
+          </div>
+        )}
+      </section>
+    );
   };
 
   const renderIban = () => (

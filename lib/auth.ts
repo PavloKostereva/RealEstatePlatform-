@@ -205,12 +205,45 @@ export const authOptions: NextAuthOptions = {
       // Для Credentials provider - стандартна логіка
       return true;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger }) {
+      // При першому вході або оновленні сесії
       if (user) {
         token.id = user.id;
         token.role = (user as any).role || 'USER';
         token.email = user.email;
       }
+
+      // Якщо сесія оновлюється (trigger === 'update'), перевіряємо актуальну роль з бази
+      if (trigger === 'update' && token.id) {
+        try {
+          const supabase = getSupabaseClient(true);
+          const tableNames = ['User', 'user', 'Users', 'users'];
+          let actualTableName: string | null = null;
+
+          for (const tableName of tableNames) {
+            const result = await supabase.from(tableName).select('id').limit(1);
+            if (!result.error) {
+              actualTableName = tableName;
+              break;
+            }
+          }
+
+          if (actualTableName) {
+            const { data: dbUser } = await supabase
+              .from(actualTableName)
+              .select('role')
+              .eq('id', token.id)
+              .single();
+
+            if (dbUser?.role) {
+              token.role = dbUser.role;
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching user role in JWT callback:', error);
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {

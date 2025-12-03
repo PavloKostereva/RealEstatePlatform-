@@ -1,47 +1,60 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts'
-import { StatsSkeleton } from '../skeletons/StatsSkeleton'
+import { useState, useEffect } from 'react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from 'recharts';
+import { StatsSkeleton } from '../skeletons/StatsSkeleton';
 
 interface Stats {
-  totalListings: number
-  totalUsers: number
-  pendingListings: number
-  listingsThisWeek: number
-  usersThisWeek: number
-  listingsByDay: Array<{ date: string; count: number }>
-  usersByDay: Array<{ date: string; count: number }>
+  totalListings: number;
+  totalUsers: number;
+  pendingListings: number;
+  listingsThisWeek: number;
+  usersThisWeek: number;
+  listingsByDay: Array<{ date: string; count: number }>;
+  usersByDay: Array<{ date: string; count: number }>;
 }
 
 export function Statistics() {
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchStats()
-  }, [])
+    fetchStats();
+  }, []);
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/admin/stats')
+      const res = await fetch('/api/admin/stats', {
+        credentials: 'include',
+      });
       if (res.ok) {
-        const data = await res.json()
-        setStats(data)
+        const data = await res.json();
+        setStats(data);
       }
     } catch (error) {
-      console.error('Error fetching stats:', error)
+      console.error('Error fetching stats:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (loading) {
-    return <StatsSkeleton />
+    return <StatsSkeleton />;
   }
 
   if (!stats) {
-    return <div className="text-center py-12">Помилка завантаження статистики</div>
+    return <div className="text-center py-12">Помилка завантаження статистики</div>;
   }
 
   return (
@@ -93,11 +106,5 @@ export function Statistics() {
         </ResponsiveContainer>
       </div>
     </div>
-  )
+  );
 }
-
-
-
-
-
-

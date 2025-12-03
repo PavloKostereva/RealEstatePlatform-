@@ -31,7 +31,9 @@ export function AdminListingsList() {
   const fetchListings = async () => {
     try {
       const url = filter === 'all' ? '/api/admin/listings' : `/api/admin/listings?status=${filter}`;
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = await res.json();
         setListings(data);
@@ -47,6 +49,7 @@ export function AdminListingsList() {
     try {
       const res = await fetch(`/api/admin/listings/${id}/approve`, {
         method: 'POST',
+        credentials: 'include',
       });
 
       if (res.ok) {
@@ -63,6 +66,7 @@ export function AdminListingsList() {
     try {
       const res = await fetch(`/api/admin/listings/${id}/reject`, {
         method: 'POST',
+        credentials: 'include',
       });
 
       if (res.ok) {
@@ -79,6 +83,7 @@ export function AdminListingsList() {
     try {
       const res = await fetch(`/api/listings/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
 
       if (res.ok) {

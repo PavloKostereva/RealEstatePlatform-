@@ -54,12 +54,12 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
     lng: -122.4194,
   });
   const [formData, setFormData] = useState({
-    title: 'Climate-Controlled Storage Unit',
-    subtitle: 'Ideal for sensitive items',
-    price: '1170',
-    size: '12',
+    title: '',
+    subtitle: '',
+    price: '',
+    size: '',
     features: [] as string[],
-    address: '123 Main St, City',
+    address: '',
     latitude: '37.7749',
     longitude: '-122.4194',
   });
@@ -120,13 +120,69 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
     }));
   };
 
-  const handleLocationChange = (coords: { lat: number; lng: number }) => {
+  // Функція для отримання адреси за координатами (reverse geocoding)
+  const getAddressFromCoordinates = async (lat: number, lng: number): Promise<string> => {
+    try {
+      // Використовуємо Nominatim API (OpenStreetMap) для reverse geocoding
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'RealEstateApp/1.0', // Nominatim вимагає User-Agent
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch address');
+      }
+
+      const data = await response.json();
+      
+      if (data && data.address) {
+        const addr = data.address;
+        // Формуємо адресу з доступних компонентів
+        const addressParts = [];
+        
+        if (addr.road || addr.street) {
+          addressParts.push(addr.road || addr.street);
+        }
+        if (addr.house_number) {
+          addressParts.push(addr.house_number);
+        }
+        if (addr.city || addr.town || addr.village) {
+          addressParts.push(addr.city || addr.town || addr.village);
+        }
+        if (addr.country) {
+          addressParts.push(addr.country);
+        }
+        
+        return addressParts.length > 0 ? addressParts.join(', ') : data.display_name || '';
+      }
+      
+      return data.display_name || '';
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      return '';
+    }
+  };
+
+  const handleLocationChange = async (coords: { lat: number; lng: number }) => {
     setLocation(coords);
     setFormData((prev) => ({
       ...prev,
       latitude: coords.lat.toString(),
       longitude: coords.lng.toString(),
     }));
+
+    // Отримуємо адресу за координатами
+    const address = await getAddressFromCoordinates(coords.lat, coords.lng);
+    if (address) {
+      setFormData((prev) => ({
+        ...prev,
+        address: address,
+      }));
+    }
   };
 
   const handleUseMyLocation = () => {
@@ -284,7 +340,8 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Enter listing title"
+              className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -295,7 +352,8 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
               rows={3}
               value={formData.subtitle}
               onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-              className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Enter listing description"
+              className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -308,7 +366,8 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
                 min="0"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="0"
+                className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div>
@@ -319,7 +378,8 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
                 min="0"
                 value={formData.size}
                 onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="0"
+                className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
@@ -355,8 +415,11 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
             <label className="block text-sm font-medium mb-3">Upload images</label>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <label className="px-4 py-2 rounded-xl bg-surface-secondary border border-subtle hover:border-primary-400 cursor-pointer flex items-center gap-2">
-                  <span>↑</span> Upload Photos
+                <label className="px-4 py-2 rounded-xl bg-surface-secondary border border-subtle hover:border-primary-400 cursor-pointer flex items-center gap-2 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  Upload Photos
                   <input
                     type="file"
                     accept="image/*"
@@ -366,24 +429,9 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
                   />
                 </label>
                 <span className="text-sm text-muted-foreground">
-                  Uploaded {images.length} photos
+                  {images.length}/10 photos (max 25MB each)
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <label className="px-4 py-2 rounded-xl bg-surface-secondary border border-subtle hover:border-primary-400 cursor-pointer flex items-center gap-2">
-                  <span>+</span> Add Photo
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {images.length}/10 photos (max 25MB each)
-              </p>
               <p className="text-xs text-primary-500">
                 You can select multiple photos at once or drag & drop them here
               </p>
@@ -431,7 +479,7 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
                         setLocation({ lat: parseFloat(e.target.value), lng: location.lng });
                       }
                     }}
-                    className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                    className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                   />
                 </div>
                 <div>
@@ -446,7 +494,7 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
                         setLocation({ lat: location.lat, lng: parseFloat(e.target.value) });
                       }
                     }}
-                    className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                    className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                   />
                 </div>
               </div>
@@ -457,7 +505,7 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
                   required
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                  className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                 />
               </div>
               <div className="flex gap-3">
@@ -550,7 +598,7 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
             <input
               type="text"
               placeholder="https://example.com/your-file.xlsx"
-              className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm transition-all"
+              className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm transition-all"
             />
             <div className="flex gap-3">
               <label className="px-4 py-2 rounded-xl bg-surface-secondary border border-subtle hover:border-primary-400 hover:bg-surface cursor-pointer text-sm flex-1 text-center transition-all">
