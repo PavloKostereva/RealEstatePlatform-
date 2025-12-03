@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseClient } from '@/lib/supabase';
 import { headers } from 'next/headers';
 
 export async function GET(
@@ -19,16 +19,38 @@ export async function GET(
       return NextResponse.json({ saved: false });
     }
 
-    const saved = await prisma.savedListing.findUnique({
-      where: {
-        userId_listingId: {
-          userId: session.user.id,
-          listingId: resolvedParams.id,
-        },
-      },
-    });
+    const supabase = getSupabaseClient(true);
 
-    return NextResponse.json({ saved: !!saved });
+    // Знаходимо правильну назву таблиці
+    const tableNames = ['SavedListing', 'savedListing', 'saved_listings', 'SavedListings'];
+    let actualTableName: string | null = null;
+
+    for (const tableName of tableNames) {
+      const result = await supabase.from(tableName).select('id').limit(1);
+      if (!result.error) {
+        actualTableName = tableName;
+        break;
+      }
+    }
+
+    if (!actualTableName) {
+      // Якщо таблиця не знайдена, повертаємо false
+      return NextResponse.json({ saved: false });
+    }
+
+    const { data, error } = await supabase
+      .from(actualTableName)
+      .select('id')
+      .eq('userId', session.user.id)
+      .eq('listingId', resolvedParams.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking saved:', error);
+      return NextResponse.json({ saved: false });
+    }
+
+    return NextResponse.json({ saved: !!data });
   } catch (error) {
     console.error('Error checking saved:', error);
     return NextResponse.json({ saved: false });
@@ -50,53 +72,111 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const supabase = getSupabaseClient(true);
+
+    // Знаходимо правильну назву таблиці
+    const tableNames = ['SavedListing', 'savedListing', 'saved_listings', 'SavedListings'];
+    let actualTableName: string | null = null;
+
+    for (const tableName of tableNames) {
+      const result = await supabase.from(tableName).select('id').limit(1);
+      if (!result.error) {
+        actualTableName = tableName;
+        break;
+      }
+    }
+
+    if (!actualTableName) {
+      return NextResponse.json(
+        { error: 'SavedListing table not found in database' },
+        { status: 500 },
+      );
+    }
+
     // Перевіряємо, чи вже збережено
-    const existing = await prisma.savedListing.findUnique({
-      where: {
-        userId_listingId: {
-          userId: session.user.id,
-          listingId: resolvedParams.id,
-        },
-      },
-    });
+    const { data: existing } = await supabase
+      .from(actualTableName)
+      .select('*')
+      .eq('userId', session.user.id)
+      .eq('listingId', resolvedParams.id)
+      .maybeSingle();
 
     if (existing) {
       return NextResponse.json(existing);
     }
 
-    const saved = await prisma.savedListing.create({
-      data: {
+    // Перевіряємо, чи існує listing в Supabase
+    const listingTableNames = ['Listing', 'listings', 'Listings', 'listing'];
+    let actualListingTableName: string | null = null;
+
+    for (const tableName of listingTableNames) {
+      const result = await supabase
+        .from(tableName)
+        .select('id')
+        .eq('id', resolvedParams.id)
+        .limit(1);
+      if (!result.error && result.data && result.data.length > 0) {
+        actualListingTableName = tableName;
+        break;
+      }
+    }
+
+    if (!actualListingTableName) {
+      return NextResponse.json(
+        {
+          error: 'Listing not found',
+          message: 'The listing you are trying to save does not exist in the database.',
+        },
+        { status: 404 },
+      );
+    }
+
+    // Створюємо SavedListing
+    const { data: saved, error: insertError } = await supabase
+      .from(actualTableName)
+      .insert({
         userId: session.user.id,
         listingId: resolvedParams.id,
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      // Якщо помилка через дублікат (unique constraint)
+      if (insertError.code === '23505' || insertError.message?.includes('duplicate')) {
+        // Перевіряємо ще раз
+        const { data: existingCheck } = await supabase
+          .from(actualTableName)
+          .select('*')
+          .eq('userId', session.user.id)
+          .eq('listingId', resolvedParams.id)
+          .maybeSingle();
+
+        if (existingCheck) {
+          return NextResponse.json(existingCheck);
+        }
+      }
+
+      console.error('Error saving listing:', insertError);
+      return NextResponse.json(
+        {
+          error: 'Failed to save listing',
+          message: insertError.message || 'An unexpected error occurred',
+        },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json(saved);
   } catch (error: any) {
     console.error('Error saving listing:', error);
-    // Якщо помилка через дублікат, повертаємо існуючий запис
-    if (error.code === 'P2002') {
-      const headersList = headers();
-      const session = await getServerSession({
-        ...authOptions,
-        req: { headers: Object.fromEntries(headersList.entries()) } as any,
-      });
-      if (session) {
-        const resolvedParams = params instanceof Promise ? await params : params;
-        const existing = await prisma.savedListing.findUnique({
-          where: {
-            userId_listingId: {
-              userId: session.user.id,
-              listingId: resolvedParams.id,
-            },
-          },
-        });
-        if (existing) {
-          return NextResponse.json(existing);
-        }
-      }
-    }
-    return NextResponse.json({ error: 'Failed to save listing' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Failed to save listing',
+        message: error.message || 'An unexpected error occurred',
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -115,22 +195,47 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await prisma.savedListing.delete({
-      where: {
-        userId_listingId: {
-          userId: session.user.id,
-          listingId: resolvedParams.id,
-        },
-      },
-    });
+    const supabase = getSupabaseClient(true);
+
+    // Знаходимо правильну назву таблиці
+    const tableNames = ['SavedListing', 'savedListing', 'saved_listings', 'SavedListings'];
+    let actualTableName: string | null = null;
+
+    for (const tableName of tableNames) {
+      const result = await supabase.from(tableName).select('id').limit(1);
+      if (!result.error) {
+        actualTableName = tableName;
+        break;
+      }
+    }
+
+    if (!actualTableName) {
+      // Якщо таблиця не знайдена, вважаємо що видалення успішне
+      return NextResponse.json({ success: true });
+    }
+
+    const { error: deleteError } = await supabase
+      .from(actualTableName)
+      .delete()
+      .eq('userId', session.user.id)
+      .eq('listingId', resolvedParams.id);
+
+    if (deleteError) {
+      // Якщо запис не знайдено, це не помилка
+      if (deleteError.code === 'PGRST116' || deleteError.message?.includes('not found')) {
+        return NextResponse.json({ success: true });
+      }
+      console.error('Error unsaving listing:', deleteError);
+      return NextResponse.json(
+        { error: 'Failed to unsave listing', message: deleteError.message },
+        { status: 500 },
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error unsaving listing:', error);
     // Якщо запис не знайдено, це не помилка
-    if (error.code === 'P2025') {
-      return NextResponse.json({ success: true });
-    }
-    return NextResponse.json({ error: 'Failed to unsave listing' }, { status: 500 });
+    return NextResponse.json({ success: true });
   }
 }

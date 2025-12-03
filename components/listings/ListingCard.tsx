@@ -30,48 +30,71 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
   const t = useTranslations('listing');
   const { data: session } = useSession();
   const [isSaved, setIsSaved] = useState(false);
-  
+
   // Мемоізуємо обчислення
   const imageUrl = useMemo(() => listing.images?.[0] || null, [listing.images]);
-  const typeLabel = useMemo(() => listing.type === 'RENT' ? t('rent') : t('sale'), [listing.type, t]);
+  const typeLabel = useMemo(
+    () => (listing.type === 'RENT' ? t('rent') : t('sale')),
+    [listing.type, t],
+  );
   const listingUrl = useMemo(() => `/${locale}/listings/${listing.id}`, [locale, listing.id]);
 
   // Використовуємо React Query для перевірки saved статусу
-  const { data: savedData } = useSavedListing(listing.id);
+  const { data: savedData, refetch: refetchSaved } = useSavedListing(listing.id);
   const toggleSavedMutation = useToggleSaved();
 
-  // Синхронізуємо стан з React Query
+  // Використовуємо savedData безпосередньо, але з fallback на локальний стан
+  const isSavedState = savedData?.saved ?? isSaved;
+
+  // Синхронізуємо локальний стан з React Query
   useEffect(() => {
-    if (savedData) {
+    if (savedData !== undefined) {
       setIsSaved(savedData.saved || false);
     }
   }, [savedData]);
 
-  const toggleSaved = useCallback(async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!session) {
-      alert('Please sign in to save listings for comparison');
-      return;
-    }
+  const toggleSaved = useCallback(
+    async (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!session) {
+        alert('Будь ласка, увійдіть, щоб зберігати оголошення');
+        return;
+      }
 
-    toggleSavedMutation.mutate(
-      {
-        listingId: listing.id,
-        isSaved: isSaved,
-      },
-      {
-        onSuccess: () => {
-          // Оновлюємо локальний стан після успішного збереження
-          setIsSaved(!isSaved);
+      if (toggleSavedMutation.isPending) {
+        return; // Запобігаємо подвійним клікам
+      }
+
+      // Оптимістичне оновлення - одразу змінюємо стан
+      const newSavedState = !isSavedState;
+      setIsSaved(newSavedState);
+
+      toggleSavedMutation.mutate(
+        {
+          listingId: listing.id,
+          isSaved: isSavedState,
         },
-      },
-    );
-  }, [session, listing.id, isSaved, toggleSavedMutation]);
+        {
+          onSuccess: () => {
+            // Перезапитуємо дані для переконання що все синхронізовано
+            refetchSaved();
+          },
+          onError: (error) => {
+            // Відкатуємо оптимістичне оновлення при помилці
+            setIsSaved(!newSavedState);
+            console.error('Error toggling saved:', error);
+            alert('Помилка при збереженні оголошення. Спробуйте ще раз.');
+          },
+        },
+      );
+    },
+    [session, listing.id, isSavedState, toggleSavedMutation, refetchSaved],
+  );
 
   if (variant === 'list') {
     return (
-      <div className="bg-surface rounded-lg border border-subtle overflow-hidden hover:border-primary-400 hover:bg-accent/50 transition-all transition-colors cursor-pointer relative">
+      <div className="bg-surface rounded-lg border border-subtle overflow-hidden hover:border-primary-400 hover:bg-accent/50 transition-colors cursor-pointer relative">
         <div className="flex gap-3 p-3">
           <Link href={listingUrl} className="flex gap-3 flex-1 min-w-0" prefetch={true}>
             <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-surface-secondary">
@@ -134,12 +157,15 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
               {t('bookAndPay')}
             </button>
             <button
+              type="button"
               onClick={toggleSaved}
-              className="w-9 h-9 rounded-lg bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition z-10 border border-white/20 flex-shrink-0"
-              aria-label={isSaved ? 'Remove from saved' : 'Save listing'}>
+              disabled={toggleSavedMutation.isPending}
+              className="w-9 h-9 rounded-lg bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition z-10 border border-white/20 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={isSavedState ? 'Remove from saved' : 'Save listing'}
+              title={isSavedState ? 'Видалити з улюблених' : 'Додати до улюблених'}>
               <svg
-                className={`w-5 h-5 ${isSaved ? 'fill-red-500 text-red-500' : 'text-white'}`}
-                fill={isSaved ? 'currentColor' : 'none'}
+                className={`w-5 h-5 ${isSavedState ? 'fill-red-500 text-red-500' : 'text-white'}`}
+                fill={isSavedState ? 'currentColor' : 'none'}
                 stroke="currentColor"
                 strokeWidth={2}
                 viewBox="0 0 24 24">
@@ -158,7 +184,7 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
 
   return (
     <Link href={listingUrl} prefetch={true}>
-      <div className="bg-surface rounded-xl border border-subtle overflow-hidden hover:border-primary-400 hover:shadow-md transition-all transition-shadow cursor-pointer flex flex-col h-full">
+      <div className="bg-surface rounded-xl border border-subtle overflow-hidden hover:border-primary-400 hover:shadow-md transition-shadow cursor-pointer flex flex-col h-full">
         {/* Image section */}
         <div className="relative w-full h-48 bg-surface-secondary">
           {imageUrl ? (
@@ -179,12 +205,15 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
           )}
 
           <button
+            type="button"
             onClick={toggleSaved}
-            className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition z-10 border border-white/20"
-            aria-label={isSaved ? 'Remove from saved' : 'Save listing'}>
+            disabled={toggleSavedMutation.isPending}
+            className="absolute top-3 left-3 w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition z-20 border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={isSavedState ? 'Remove from saved' : 'Save listing'}
+            title={isSavedState ? 'Видалити з улюблених' : 'Додати до улюблених'}>
             <svg
-              className={`w-5 h-5 ${isSaved ? 'fill-red-500 text-red-500' : 'text-white'}`}
-              fill={isSaved ? 'currentColor' : 'none'}
+              className={`w-5 h-5 ${isSavedState ? 'fill-red-500 text-red-500' : 'text-white'}`}
+              fill={isSavedState ? 'currentColor' : 'none'}
               stroke="currentColor"
               strokeWidth={2}
               viewBox="0 0 24 24">
@@ -198,7 +227,7 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
 
           <div className="absolute top-3 right-3">
             <span className="bg-primary-600 text-white px-2 py-1 rounded-md text-xs font-medium">
-            {typeLabel}
+              {typeLabel}
             </span>
           </div>
         </div>
@@ -211,14 +240,14 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
 
           <div className="mt-auto">
             <p className="text-lg font-bold text-primary-600 mb-2">
-            {listing.price.toLocaleString()} {listing.currency}
-          </p>
+              {listing.price.toLocaleString()} {listing.currency}
+            </p>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {listing.rooms && (
+              {listing.rooms && (
                 <span>
                   {listing.rooms} {t('rooms')}
                 </span>
-            )}
+              )}
               {listing.rooms && listing.area && <span>•</span>}
               {listing.area && <span>{listing.area} м²</span>}
             </div>

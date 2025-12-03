@@ -31,14 +31,27 @@ export function useToggleSaved() {
     mutationFn: ({ listingId, isSaved }: { listingId: string; isSaved: boolean }) =>
       savedApi.toggleSaved(listingId, isSaved),
     onSuccess: (_, variables) => {
+      const newSavedState = !variables.isSaved;
+      
       // Оновлюємо кеш для конкретного listing
       queryClient.setQueryData(
         savedKeys.listing(variables.listingId),
-        { saved: !variables.isSaved }
+        { saved: newSavedState }
       );
+      
+      // Інвалідуємо та перезапитуємо кеш для конкретного listing, щоб переконатися що дані актуальні
+      queryClient.invalidateQueries({ 
+        queryKey: savedKeys.listing(variables.listingId) 
+      });
+      
       // Інвалідуємо список saved listings
       queryClient.invalidateQueries({ 
         queryKey: savedKeys.list(session?.user?.id) 
+      });
+      
+      // Також інвалідуємо всі saved queries для повного оновлення
+      queryClient.invalidateQueries({ 
+        queryKey: savedKeys.all 
       });
     },
   });
