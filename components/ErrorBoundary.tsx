@@ -73,7 +73,9 @@ export class ErrorBoundary extends Component<Props, State> {
                 </button>
                 <button
                   onClick={() => {
-                    window.location.href = '/';
+                    if (typeof window !== 'undefined') {
+                      window.location.href = '/';
+                    }
                   }}
                   className="px-6 py-3 border border-subtle bg-surface text-foreground rounded-lg hover:bg-surface-secondary transition-colors font-medium">
                   На головну

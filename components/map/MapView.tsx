@@ -187,7 +187,24 @@ export function MapView({
             return null;
           }
           const mapPane = this._mapPane;
-          if (!mapPane || !mapPane._leaflet_pos) {
+          if (!mapPane) {
+            return null;
+          }
+          // Додаткова перевірка перед доступом до _leaflet_pos
+          if (!mapPane._leaflet_pos) {
+            // Спробуємо ініціалізувати позицію, якщо вона відсутня
+            try {
+              if (
+                this._container &&
+                this._container.offsetWidth > 0 &&
+                this._container.offsetHeight > 0
+              ) {
+                // Карта має розміри, але позиція не ініціалізована - повертаємо null
+                return null;
+              }
+            } catch {
+              return null;
+            }
             return null;
           }
           return originalGetMapPanePos.call(this);
@@ -195,7 +212,8 @@ export function MapView({
           if (
             error?.message?.includes('_leaflet_pos') ||
             error?.message?.includes('Cannot read') ||
-            error?.toString().includes('_leaflet_pos')
+            error?.toString().includes('_leaflet_pos') ||
+            error?.message?.includes('undefined')
           ) {
             return null;
           }
@@ -203,6 +221,30 @@ export function MapView({
         }
       };
       mapInstance._getMapPanePos._wrapped = true;
+    }
+
+    // Обгорнути getPosition для безпечної обробки
+    if (mapInstance.getPosition && !mapInstance.getPosition._wrapped) {
+      const originalGetPosition = mapInstance.getPosition.bind(mapInstance);
+      mapInstance.getPosition = function (element: any) {
+        try {
+          if (!element || !element._leaflet_pos) {
+            return null;
+          }
+          return originalGetPosition.call(this, element);
+        } catch (error: any) {
+          if (
+            error?.message?.includes('_leaflet_pos') ||
+            error?.message?.includes('Cannot read') ||
+            error?.toString().includes('_leaflet_pos') ||
+            error?.message?.includes('undefined')
+          ) {
+            return null;
+          }
+          throw error;
+        }
+      };
+      mapInstance.getPosition._wrapped = true;
     }
 
     // Додати кнопку fullscreen (буде додано в addControls)
@@ -632,9 +674,22 @@ export function MapView({
     });
 
     return () => {
+      // Видаляємо всі обробники подій перед видаленням карти
+      if (map.current) {
+        try {
+          map.current.off(); // Видаляємо всі обробники подій
+        } catch (error) {
+          // Ігноруємо помилки під час cleanup
+        }
+      }
+
       markersRef.current.forEach((marker) => {
         if (marker && map.current) {
-          map.current.removeLayer(marker);
+          try {
+            map.current.removeLayer(marker);
+          } catch (error) {
+            // Ігноруємо помилки під час cleanup
+          }
         }
       });
       markersRef.current = [];
@@ -660,10 +715,25 @@ export function MapView({
         fullscreenHandlersRef.current = null;
       }
 
+      // Видаляємо обробники zoom перед видаленням карти
       if (map.current) {
-        map.current.off('zoomend', handleZoom);
-        map.current.off('zoom', handleZoom);
-        map.current.remove();
+        try {
+          const mapInstance = map.current as L.Map;
+          mapInstance.off('zoomend');
+          mapInstance.off('zoom');
+        } catch (error) {
+          // Ігноруємо помилки під час cleanup
+        }
+      }
+
+      // Видаляємо карту
+      if (map.current) {
+        try {
+          const mapInstance = map.current as L.Map;
+          mapInstance.remove();
+        } catch (error) {
+          // Ігноруємо помилки під час cleanup
+        }
         map.current = null;
       }
       tileLayerRef.current = null;

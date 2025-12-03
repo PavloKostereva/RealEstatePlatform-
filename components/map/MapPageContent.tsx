@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapView } from './MapView';
+import dynamic from 'next/dynamic';
+
+// Dynamically import MapView to avoid SSR issues with Leaflet
+const MapView = dynamic(
+  () => import('./MapView').then((mod) => ({ default: mod.MapView })),
+  {
+    ssr: false, // Карта не потребує SSR
+  },
+);
 import Image from 'next/image';
 import { useListings } from '@/hooks/useListings';
 
@@ -79,7 +87,9 @@ export function MapPageContent() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleViewModeChange = (mode: (typeof viewModes)[number]) => {

@@ -150,8 +150,8 @@ export function CheckoutModal({ isOpen, onClose, listing }: CheckoutModalProps) 
             billingCycle: billingCycle,
             customerEmail: formData.email,
             customerName: formData.fullName,
-            successUrl: `${window.location.origin}/listings/${listing.id}?success=true`,
-            cancelUrl: `${window.location.origin}?canceled=true`,
+            successUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/listings/${listing.id}?success=true`,
+            cancelUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}?canceled=true`,
           }),
         });
 
@@ -163,7 +163,7 @@ export function CheckoutModal({ isOpen, onClose, listing }: CheckoutModalProps) 
         }
 
         // Перенаправляємо на Stripe Checkout
-        if (data.url) {
+        if (data.url && typeof window !== 'undefined') {
           window.location.href = data.url;
         } else if (data.sessionId) {
           // Якщо немає URL, але є sessionId, можна спробувати інший спосіб

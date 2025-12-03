@@ -43,7 +43,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || typeof window === 'undefined') return;
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(theme);
     if (hasUserPreference) {
@@ -52,6 +52,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme, isLoaded, hasUserPreference]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
     const handler = (event: MediaQueryListEvent) => {
       if (hasUserPreference) return;

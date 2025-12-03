@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { MapView } from '@/components/map/MapView';
+import dynamic from 'next/dynamic';
+
+// Dynamically import MapView to avoid SSR issues with Leaflet
+const MapView = dynamic(
+  () => import('@/components/map/MapView').then((mod) => ({ default: mod.MapView })),
+  {
+    ssr: false, // Карта не потребує SSR
+  },
+);
 
 interface Listing {
   id: string;

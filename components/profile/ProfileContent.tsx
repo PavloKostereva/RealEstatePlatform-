@@ -177,30 +177,40 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
         }
         break;
       case 'Facebook':
-        window.open(
-          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
-          '_blank',
-        );
+        if (typeof window !== 'undefined') {
+          window.open(
+            `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+            '_blank',
+          );
+        }
         break;
       case 'Instagram':
-        navigator.clipboard.writeText(message);
-        alert('Message copied. Share it on Instagram!');
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          navigator.clipboard.writeText(message);
+          alert('Message copied. Share it on Instagram!');
+        }
         break;
       case 'Telegram':
-        window.open(
-          `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(
-            message,
-          )}`,
-          '_blank',
-        );
+        if (typeof window !== 'undefined') {
+          window.open(
+            `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(
+              message,
+            )}`,
+            '_blank',
+          );
+        }
         break;
       case 'WhatsApp':
-        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+        if (typeof window !== 'undefined') {
+          window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+        }
         break;
       case 'Email':
-        window.location.href = `mailto:?subject=RealEstate referral&body=${encodeURIComponent(
-          message,
-        )}`;
+        if (typeof window !== 'undefined') {
+          window.location.href = `mailto:?subject=RealEstate referral&body=${encodeURIComponent(
+            message,
+          )}`;
+        }
         break;
       default:
         break;
@@ -384,6 +394,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                     alt={user.name || 'User'}
                     fill
                     className="object-cover"
+                    sizes="64px"
                   />
                 </div>
               ) : (
@@ -872,10 +883,12 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                       <button
                         className="h-11 w-11 rounded-xl border border-subtle bg-surface-secondary text-muted-foreground text-lg"
                         onClick={() => {
-                          navigator.clipboard.writeText(
-                            `${window.location.origin}?ref=${affiliateCode}`,
-                          );
-                          alert('Referral link copied');
+                          if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                            navigator.clipboard.writeText(
+                              `${typeof window !== 'undefined' ? window.location.origin : ''}?ref=${affiliateCode}`,
+                            );
+                            alert('Referral link copied');
+                          }
                         }}>
                         🔗
                       </button>

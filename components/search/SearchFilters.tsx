@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 
 interface SearchFiltersProps {
@@ -11,6 +11,7 @@ interface SearchFiltersProps {
 export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const locale = useLocale();
   const t = useTranslations('filters');
   const tCommon = useTranslations('common');
@@ -29,7 +30,11 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
     if (size) params.set('size', size);
     if (label) params.set('label', label);
 
-    router.push(`/${locale}/listings?${params.toString()}`);
+    const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
+    const targetPath = isHomePage ? `/${locale}` : `/${locale}/listings`;
+    const url = params.toString() ? `${targetPath}?${params.toString()}` : targetPath;
+
+    router.push(url);
   };
 
   const resetFilters = () => {
@@ -38,7 +43,9 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
     setSortBy('');
     setSize('');
     setLabel('');
-    router.push(`/${locale}/listings`);
+    const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
+    const targetPath = isHomePage ? `/${locale}` : `/${locale}/listings`;
+    router.push(targetPath);
   };
 
   return (
@@ -62,11 +69,11 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
         <button
           onClick={async () => {
             // Перевіряємо чи є глобальний callback для карти (з HomeMapWithListings)
-            if ((window as any).handleNearMeMap) {
+            if (typeof window !== 'undefined' && (window as any).handleNearMeMap) {
               // Використовуємо геолокацію для карти
               setGettingLocation(true);
               try {
-                if (navigator.geolocation) {
+                if (typeof navigator !== 'undefined' && navigator.geolocation) {
                   navigator.geolocation.getCurrentPosition(
                     (position) => {
                       const { latitude, longitude } = position.coords;
@@ -74,11 +81,24 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
                       (window as any).handleNearMeMap(latitude, longitude);
                       setGettingLocation(false);
                     },
-                    (error) => {
-                      console.error('Geolocation error:', error);
-                      alert(
-                        'Не вдалося отримати ваше розташування. Переконайтеся, що ви надали дозвіл на доступ до геолокації.',
-                      );
+                    (error: GeolocationPositionError) => {
+                      // Логуємо тільки в режимі розробки
+                      if (process.env.NODE_ENV === 'development') {
+                        console.warn('Geolocation error:', error);
+                      }
+                      
+                      let errorMessage = 'Не вдалося отримати ваше розташування.';
+                      
+                      // Більш зрозумілі повідомлення в залежності від типу помилки
+                      if (error.code === error.PERMISSION_DENIED) {
+                        errorMessage = 'Доступ до геолокації заборонено. Будь ласка, дозвольте доступ у налаштуваннях браузера.';
+                      } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        errorMessage = 'Інформація про розташування недоступна. Перевірте, чи увімкнено GPS або Wi-Fi.';
+                      } else if (error.code === error.TIMEOUT) {
+                        errorMessage = 'Час очікування геолокації вийшов. Спробуйте ще раз.';
+                      }
+                      
+                      alert(errorMessage);
                       setGettingLocation(false);
                       setNearMe(false);
                     },
@@ -97,10 +117,9 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
                 setGettingLocation(false);
               }
             } else if (onNearMeClick) {
-              // Якщо є prop callback, використовуємо його
               setGettingLocation(true);
               try {
-                if (navigator.geolocation) {
+                if (typeof navigator !== 'undefined' && navigator.geolocation) {
                   navigator.geolocation.getCurrentPosition(
                     (position) => {
                       const { latitude, longitude } = position.coords;
@@ -108,11 +127,24 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
                       onNearMeClick(latitude, longitude);
                       setGettingLocation(false);
                     },
-                    (error) => {
-                      console.error('Geolocation error:', error);
-                      alert(
-                        'Не вдалося отримати ваше розташування. Переконайтеся, що ви надали дозвіл на доступ до геолокації.',
-                      );
+                    (error: GeolocationPositionError) => {
+                      // Логуємо тільки в режимі розробки
+                      if (process.env.NODE_ENV === 'development') {
+                        console.warn('Geolocation error:', error);
+                      }
+                      
+                      let errorMessage = 'Не вдалося отримати ваше розташування.';
+                      
+                      // Більш зрозумілі повідомлення в залежності від типу помилки
+                      if (error.code === error.PERMISSION_DENIED) {
+                        errorMessage = 'Доступ до геолокації заборонено. Будь ласка, дозвольте доступ у налаштуваннях браузера.';
+                      } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        errorMessage = 'Інформація про розташування недоступна. Перевірте, чи увімкнено GPS або Wi-Fi.';
+                      } else if (error.code === error.TIMEOUT) {
+                        errorMessage = 'Час очікування геолокації вийшов. Спробуйте ще раз.';
+                      }
+                      
+                      alert(errorMessage);
                       setGettingLocation(false);
                       setNearMe(false);
                     },

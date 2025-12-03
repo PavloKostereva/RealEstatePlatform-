@@ -55,10 +55,18 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
       return;
     }
 
-    toggleSavedMutation.mutate({
-      listingId: listing.id,
-      isSaved: isSaved,
-      });
+    toggleSavedMutation.mutate(
+      {
+        listingId: listing.id,
+        isSaved: isSaved,
+      },
+      {
+        onSuccess: () => {
+          // Оновлюємо локальний стан після успішного збереження
+          setIsSaved(!isSaved);
+        },
+      },
+    );
   }, [session, listing.id, isSaved, toggleSavedMutation]);
 
   if (variant === 'list') {

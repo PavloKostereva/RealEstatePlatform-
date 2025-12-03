@@ -33,7 +33,8 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
 
   const handleGoogleSignIn = async () => {
     try {
-      await signIn('google', { callbackUrl: window.location.origin });
+      const callbackUrl = typeof window !== 'undefined' ? window.location.origin : '/';
+      await signIn('google', { callbackUrl });
     } catch (error) {
       console.error('Error signing in with Google:', error);
     }
@@ -41,7 +42,8 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
 
   const handleDiscordSignIn = async () => {
     try {
-      await signIn('discord', { callbackUrl: window.location.origin });
+      const callbackUrl = typeof window !== 'undefined' ? window.location.origin : '/';
+      await signIn('discord', { callbackUrl });
     } catch (error) {
       console.error('Error signing in with Discord:', error);
     }
@@ -49,7 +51,8 @@ export function SignInModal({ open, onClose }: SignInModalProps) {
 
   const handleLinkedInSignIn = async () => {
     try {
-      await signIn('linkedin', { callbackUrl: window.location.origin });
+      const callbackUrl = typeof window !== 'undefined' ? window.location.origin : '/';
+      await signIn('linkedin', { callbackUrl });
     } catch (error) {
       console.error('Error signing in with LinkedIn:', error);
     }
