@@ -71,7 +71,9 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   const [listingsLoading, setListingsLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [activeBookingTab, setActiveBookingTab] = useState<'my-bookings' | 'for-listings'>('my-bookings');
+  const [activeBookingTab, setActiveBookingTab] = useState<'my-bookings' | 'for-listings'>(
+    'my-bookings',
+  );
   const [editData, setEditData] = useState({ name: '', phone: '', location: '', bio: '' });
   const [expandedSections, setExpandedSections] = useState({
     personalInfo: false,
@@ -321,8 +323,80 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   const profileCompletion = Math.round(
     (profileFields.filter(Boolean).length / profileFields.length) * 100,
   );
-  const earnings = listings.reduce((sum, listing) => sum + (listing.price || 0), 0);
-  const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' });
+  // Розрахунок заробітків на основі опублікованих listings
+  const publishedListings = listings.filter((l) => l.status === 'PUBLISHED');
+  
+  // Розрахунок заробітків за різні періоди
+  const calculateEarnings = (period: 'month' | 'quarter' | 'year') => {
+    const now = new Date();
+    let startDate: Date;
+    
+    switch (period) {
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'quarter':
+        const quarter = Math.floor(now.getMonth() / 3);
+        startDate = new Date(now.getFullYear(), quarter * 3, 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+    }
+    
+    // Фільтруємо listings, створені в цьому періоді
+    const periodListings = publishedListings.filter((listing) => {
+      const listingDate = new Date(listing.createdAt || listing.updatedAt);
+      return listingDate >= startDate;
+    });
+    
+    // Розраховуємо суму (можна додати комісію, наприклад 10%)
+    const total = periodListings.reduce((sum, listing) => sum + (listing.price || 0), 0);
+    const commission = 0.1; // 10% комісія платформи
+    return total * (1 - commission);
+  };
+  
+  const earnings = calculateEarnings(earningsPeriod);
+  
+  // Дані для графіка (останні 5 місяців)
+  const getChartData = () => {
+    const months = [];
+    const now = new Date();
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    for (let i = 4; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = monthNames[date.getMonth()];
+      
+      // Розраховуємо заробітки за цей місяць
+      const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
+      
+      const monthListings = publishedListings.filter((listing) => {
+        const listingDate = new Date(listing.createdAt || listing.updatedAt);
+        return listingDate >= monthStart && listingDate <= monthEnd;
+      });
+      
+      const monthEarnings = monthListings.reduce((sum, listing) => sum + (listing.price || 0), 0) * 0.9;
+      months.push({ name: monthName, earnings: monthEarnings });
+    }
+    
+    // Розраховуємо максимальне значення для нормалізації висоти
+    const maxEarnings = Math.max(...months.map((m) => m.earnings), 1);
+    
+    // Додаємо висоту для кожного місяця (мінімум 5% для візуалізації)
+    return months.map((month) => ({
+      ...month,
+      height: maxEarnings > 0 ? Math.max((month.earnings / maxEarnings) * 100, 5) : 5,
+    }));
+  };
+  
+  const chartData = getChartData();
+  
+  const currencyFormatter = new Intl.NumberFormat('en-US', { 
+    style: 'currency', 
+    currency: publishedListings[0]?.currency || 'EUR' 
+  });
   const affiliateCode =
     (user.id || 'REAL-USER')
       .replace(/[^A-Za-z0-9]/g, '')
@@ -433,13 +507,23 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
       case 'Support':
         return (
           <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
+            />
           </svg>
         );
       case 'Affiliate Code':
         return (
           <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
         );
       default:
@@ -915,7 +999,12 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
                 <div className="flex items-center gap-3">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                    />
                   </svg>
                   <h3 className="text-lg font-semibold text-foreground">Listings</h3>
                 </div>
@@ -1020,15 +1109,18 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                         className="flex-1 h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
                       />
                       <button
-                        className="h-11 w-11 rounded-xl border border-subtle bg-surface-secondary text-muted-foreground text-lg"
+                        className="h-11 w-11 rounded-xl border border-subtle bg-surface-secondary text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
                         onClick={() => {
                           navigator.clipboard.writeText(affiliateCode);
                           toast.success('Affiliate code copied');
-                        }}>
-                        ⧉
+                        }}
+                        title="Copy code">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
                       </button>
                       <button
-                        className="h-11 w-11 rounded-xl border border-subtle bg-surface-secondary text-muted-foreground text-lg"
+                        className="h-11 w-11 rounded-xl border border-subtle bg-surface-secondary text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
                         onClick={() => {
                           if (typeof navigator !== 'undefined' && navigator.clipboard) {
                             navigator.clipboard.writeText(
@@ -1038,8 +1130,11 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                             );
                             toast.success('Referral link copied');
                           }
-                        }}>
-                        🔗
+                        }}
+                        title="Copy link">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
                       </button>
                     </div>
                     <div className="mt-4 grid sm:grid-cols-3 md:grid-cols-6 gap-2 text-sm">
@@ -1080,38 +1175,49 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             <h3 className="text-lg font-semibold text-foreground mb-4">Quick actions</h3>
             <div>
               <p className="text-sm text-muted-foreground mb-2">Potential earnings</p>
-              <select className="w-full h-10 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm mb-3">
-                <option>Quarter</option>
-                <option>Month</option>
-                <option>Year</option>
+              <select
+                value={earningsPeriod}
+                onChange={(e) => setEarningsPeriod(e.target.value as 'month' | 'quarter' | 'year')}
+                className="w-full h-10 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                <option value="month">Month</option>
+                <option value="quarter">Quarter</option>
+                <option value="year">Year</option>
               </select>
               <p className="text-3xl font-semibold text-foreground mb-1">
-                {currencyFormatter.format(earnings / 4 || 0)}
+                {currencyFormatter.format(earnings || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Based on {publishedListings.length} published {publishedListings.length === 1 ? 'listing' : 'listings'}
               </p>
               <div className="h-24 bg-surface-secondary rounded-xl flex items-end justify-between p-2 gap-1">
-                {['Jul', 'Aug', 'Sep', 'Oct', 'Nov'].map((month, idx) => (
+                {chartData.map((data, idx) => (
                   <div
-                    key={month}
-                    className="flex-1 bg-primary-600 rounded-t"
-                    style={{ height: `${Math.random() * 20}%` }}></div>
+                    key={`${data.name}-${idx}`}
+                    className="flex-1 bg-primary-600 rounded-t transition-all hover:bg-primary-500 group relative"
+                    style={{ height: `${data.height}%` }}
+                    title={`${data.name}: ${currencyFormatter.format(data.earnings)}`}>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                      {data.name}: {currencyFormatter.format(data.earnings)}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
             <div className="mt-4 flex gap-2">
               <Link
-                href="/listings"
+                href={`/${locale}/listings`}
                 className="flex-1 h-10 rounded-xl border border-subtle bg-surface-secondary text-sm font-medium text-foreground hover:border-primary-400 text-center flex items-center justify-center">
                 Browse listings
               </Link>
               {isOwnProfile ? (
                 <Link
-                  href="/my-listings"
+                  href={`/${locale}/my-listings`}
                   className="flex-1 h-10 rounded-xl bg-primary-600 text-white text-xs font-medium shadow hover:bg-primary-700 flex items-center justify-center whitespace-nowrap px-2">
                   Manage my listings
                 </Link>
               ) : (
                 <Link
-                  href="/how-it-works"
+                  href={`/${locale}/how-it-works`}
                   className="flex-1 h-10 rounded-xl bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700 flex items-center justify-center">
                   Get started
                 </Link>
@@ -1123,7 +1229,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
           <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6">
             <p className="text-sm text-muted-foreground mb-4">Upload a listing to view data</p>
             <Link
-              href={isOwnProfile ? '/listings/create' : '/how-it-works'}
+              href={isOwnProfile ? `/${locale}/my-listings` : `/${locale}/how-it-works`}
               className="w-full h-11 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 flex items-center justify-center mb-4">
               Upload first listing
             </Link>
@@ -1133,7 +1239,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 {listings.slice(0, 3).map((listing) => (
                   <Link
                     key={listing.id}
-                    href={`/listings/${listing.id}`}
+                    href={`/${locale}/listings/${listing.id}`}
                     className="block p-2 rounded-lg bg-surface-secondary hover:bg-surface border border-subtle transition">
                     <p className="text-xs font-medium text-foreground truncate">
                       {listing.title || 'Untitled Listing'}
