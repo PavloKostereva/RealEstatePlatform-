@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useState, useEffect, memo, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSavedListing, useToggleSaved } from '@/hooks/useSaved';
+import { useToast } from '@/components/ui/ToastContainer';
 
 interface ListingCardProps {
   listing: {
@@ -29,6 +30,7 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
   const locale = useLocale();
   const t = useTranslations('listing');
   const { data: session } = useSession();
+  const toast = useToast();
   const [isSaved, setIsSaved] = useState(false);
 
   // Мемоізуємо обчислення
@@ -58,7 +60,7 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
       e.preventDefault();
       e.stopPropagation();
       if (!session) {
-        alert('Будь ласка, увійдіть, щоб зберігати оголошення');
+        toast.warning('Будь ласка, увійдіть, щоб зберігати оголошення');
         return;
       }
 
@@ -84,7 +86,7 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
             // Відкатуємо оптимістичне оновлення при помилці
             setIsSaved(!newSavedState);
             console.error('Error toggling saved:', error);
-            alert('Помилка при збереженні оголошення. Спробуйте ще раз.');
+            toast.error('Помилка при збереженні оголошення. Спробуйте ще раз.');
           },
         },
       );
@@ -151,7 +153,7 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                alert('Book & Pay functionality not implemented in demo');
+                toast.info('Book & Pay functionality not implemented in demo');
               }}
               className="px-4 py-2 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition text-sm">
               {t('bookAndPay')}

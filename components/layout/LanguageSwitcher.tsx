@@ -5,8 +5,8 @@ import { usePathname, useRouter } from 'next/navigation'
 import { locales } from '@/i18n'
 
 const localeNames: Record<string, string> = {
-  uk: '🇺🇦 UK',
-  en: '🇬🇧 EN',
+  uk: 'UK',
+  en: 'EN',
 }
 
 export function LanguageSwitcher() {
