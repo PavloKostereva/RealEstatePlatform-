@@ -74,7 +74,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   const [activeBookingTab, setActiveBookingTab] = useState<'my-bookings' | 'for-listings'>(
     'my-bookings',
   );
-  const [editData, setEditData] = useState({ name: '', phone: '', location: '', bio: '' });
+  const [editData, setEditData] = useState({ name: '', phone: '', location: '', bio: '', iban: '' });
   const [expandedSections, setExpandedSections] = useState({
     personalInfo: false,
     documents: false,
@@ -125,6 +125,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
         phone: user.phone || '',
         location: user.location || '',
         bio: user.bio || '',
+        iban: (user as any).iban || '',
       });
     }
   }, [user]);
@@ -261,6 +262,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
         phone: user.phone || '',
         location: user.location || '',
         bio: user.bio || '',
+        iban: (user as any).iban || '',
       });
     }
     setEditMode(false);
@@ -279,6 +281,26 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
         method: 'PUT',
         body: formData,
       });
+
+      // Зберігаємо IBAN через окремий API endpoint
+      if (editData.iban && editData.iban.trim()) {
+        try {
+          const ibanRes = await fetch('/api/iban', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ iban: editData.iban.trim() }),
+          });
+
+          if (!ibanRes.ok) {
+            console.error('Error saving IBAN:', await ibanRes.text());
+          }
+        } catch (error) {
+          console.error('Error saving IBAN:', error);
+        }
+      }
 
       if (!res.ok) {
         const error = await res.json();

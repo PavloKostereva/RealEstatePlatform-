@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useSession } from 'next-auth/react'
-import Image from 'next/image'
-import { SaveListingButton } from './SaveListingButton'
-import { ContactForm } from './ContactForm'
-import { ReviewsSection } from './ReviewsSection'
-import dynamic from 'next/dynamic'
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import Image from 'next/image';
+import { SaveListingButton } from './SaveListingButton';
+import { ContactForm } from './ContactForm';
+import { ReviewsSection } from './ReviewsSection';
+import dynamic from 'next/dynamic';
 
 // Dynamically import MapView to avoid SSR issues with Leaflet
 const MapView = dynamic(
@@ -14,35 +14,35 @@ const MapView = dynamic(
   {
     ssr: false, // Карта не потребує SSR
   },
-)
+);
 
 interface ListingDetailsProps {
   listing: {
-    id: string
-    title: string
-    description: string
-    type: string
-    category: string
-    price: number
-    currency: string
-    address: string
-    latitude?: number
-    longitude?: number
-    area?: number
-    rooms?: number
-    images: string[]
-    amenities: string[]
-    availableFrom?: string
-    availableTo?: string
-    views: number
-    createdAt: string
+    id: string;
+    title: string;
+    description: string;
+    type: string;
+    category: string;
+    price: number;
+    currency: string;
+    address: string;
+    latitude?: number;
+    longitude?: number;
+    area?: number;
+    rooms?: number;
+    images: string[];
+    amenities: string[];
+    availableFrom?: string;
+    availableTo?: string;
+    views: number;
+    createdAt: string;
     owner: {
-      id: string
-      name?: string
-      email: string
-      phone?: string
-      avatar?: string
-    }
+      id: string;
+      name?: string;
+      email: string;
+      phone?: string;
+      avatar?: string;
+    };
     reviews?: Array<{
       id: string;
       rating: number;
@@ -53,20 +53,26 @@ interface ListingDetailsProps {
         email: string;
       };
       createdAt: string;
-    }>
-  }
+    }>;
+  };
 }
 
 export function ListingDetails({ listing }: ListingDetailsProps) {
-  const { data: session } = useSession()
-  const [selectedImage, setSelectedImage] = useState(0)
+  const { data: session } = useSession();
+  const [selectedImage, setSelectedImage] = useState(0);
 
-  const typeLabel = listing.type === 'RENT' ? 'Оренда' : 'Продаж'
+  const typeLabel = listing.type === 'RENT' ? 'Оренда' : 'Продаж';
   const categoryLabels: Record<string, string> = {
     APARTMENT: 'Квартира',
     HOUSE: 'Будинок',
     COMMERCIAL: 'Комерція',
-  }
+  };
+
+  const isPrivate =
+    listing.type?.toLowerCase() === 'private' ||
+    listing.category?.toLowerCase() === 'private' ||
+    listing.type?.toLowerCase().includes('private') ||
+    listing.category?.toLowerCase().includes('private');
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -114,8 +120,7 @@ export function ListingDetails({ listing }: ListingDetailsProps) {
                     onClick={() => setSelectedImage(idx)}
                     className={`relative h-20 rounded overflow-hidden ${
                       selectedImage === idx ? 'ring-2 ring-primary-600' : ''
-                    }`}
-                  >
+                    }`}>
                     <Image
                       src={img}
                       alt={`${listing.title} ${idx + 1}`}
@@ -133,7 +138,10 @@ export function ListingDetails({ listing }: ListingDetailsProps) {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-primary-600 text-white px-3 py-1 rounded text-sm">
+                  <span
+                    className={`px-3 py-1 rounded text-sm text-white ${
+                      isPrivate ? 'bg-orange-600' : 'bg-primary-600'
+                    }`}>
                     {typeLabel}
                   </span>
                   <span className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm">
@@ -151,9 +159,7 @@ export function ListingDetails({ listing }: ListingDetailsProps) {
 
             <div className="border-t pt-4 mb-4">
               <h2 className="text-xl font-semibold mb-3">Опис</h2>
-              <p className="text-gray-700 whitespace-pre-line">
-                {listing.description}
-              </p>
+              <p className="text-gray-700 whitespace-pre-line">{listing.description}</p>
             </div>
 
             <div className="border-t pt-4">
@@ -192,8 +198,7 @@ export function ListingDetails({ listing }: ListingDetailsProps) {
                     {listing.amenities.map((amenity, idx) => (
                       <span
                         key={idx}
-                        className="bg-primary-50 text-primary-700 px-3 py-1 rounded text-sm"
-                      >
+                        className="bg-primary-50 text-primary-700 px-3 py-1 rounded text-sm">
                         {amenity}
                       </span>
                     ))}
@@ -241,12 +246,8 @@ export function ListingDetails({ listing }: ListingDetailsProps) {
                   />
                 </div>
               )}
-              <p className="font-semibold text-lg">
-                {listing.owner.name || 'Власник'}
-              </p>
-              {listing.owner.phone && (
-                <p className="text-gray-600">{listing.owner.phone}</p>
-              )}
+              <p className="font-semibold text-lg">{listing.owner.name || 'Власник'}</p>
+              {listing.owner.phone && <p className="text-gray-600">{listing.owner.phone}</p>}
               <p className="text-gray-600 text-sm">{listing.owner.email}</p>
             </div>
 
@@ -257,11 +258,5 @@ export function ListingDetails({ listing }: ListingDetailsProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
-
-
-
-
-
-

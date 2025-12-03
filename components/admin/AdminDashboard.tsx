@@ -8,6 +8,7 @@ import { useAdminStats, useAdminListings } from '@/hooks/useAdmin';
 import { TableRowsSkeleton } from '@/components/skeletons/TableRowsSkeleton';
 import { StatsSkeleton } from '@/components/skeletons/StatsSkeleton';
 import { AdminSupportChat } from './AdminSupportChat';
+import { useToast } from '@/components/ui/ToastContainer';
 
 interface Listing {
   id: string;
@@ -66,10 +67,16 @@ const supportConversationsMock = [
   },
 ];
 
-const ibanSubmissionsMock: { id: string; email: string; iban: string; createdAt: string }[] = [];
+interface IbanSubmission {
+  id: string;
+  email: string;
+  iban: string;
+  createdAt: string;
+}
 
 export function AdminDashboard() {
   const router = useRouter();
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<'listings' | 'approvals' | 'support' | 'iban'>(
     'listings',
   );
@@ -79,6 +86,8 @@ export function AdminDashboard() {
   const [createLoading, setCreateLoading] = useState(false);
   const [filters, setFilters] = useState({ search: '', order: 'desc', category: 'all' });
   const [showMoreFeatures, setShowMoreFeatures] = useState(false);
+  const [ibanSubmissions, setIbanSubmissions] = useState<IbanSubmission[]>([]);
+  const [ibanLoading, setIbanLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     createForm: false,
     filters: true,
@@ -118,6 +127,34 @@ export function AdminDashboard() {
   useEffect(() => {
     if (statsData) setStats(statsData);
   }, [statsData]);
+
+  // Завантажуємо IBAN submissions
+  useEffect(() => {
+    if (activeTab === 'iban') {
+      fetchIbanSubmissions();
+    }
+  }, [activeTab]);
+
+  const fetchIbanSubmissions = async () => {
+    setIbanLoading(true);
+    try {
+      const res = await fetch('/api/iban', {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIbanSubmissions(data);
+      } else {
+        console.error('Error fetching IBAN submissions:', res.statusText);
+        setIbanSubmissions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching IBAN submissions:', error);
+      setIbanSubmissions([]);
+    } finally {
+      setIbanLoading(false);
+    }
+  };
 
   useEffect(() => {
     console.log('AdminDashboard: allListingsData changed', {
@@ -297,22 +334,24 @@ export function AdminDashboard() {
     const getTotal = () => {
       if (activeTab === 'approvals') return pendingListings.length;
       if (activeTab === 'support') return supportConversationsMock.length;
-      if (activeTab === 'iban') return ibanSubmissionsMock.length;
+      if (activeTab === 'iban') return ibanSubmissions.length;
       return stats?.totalListings ?? 0;
     };
 
     return (
-      <div className="flex flex-wrap items-center gap-4 justify-between mt-6">
-        <div className="text-muted-foreground text-sm">Total: {getTotal()}</div>
-        <div className="flex gap-3">
+      <div className="flex items-center gap-4 justify-between min-h-[44px]">
+        <div className="text-muted-foreground text-sm whitespace-nowrap">
+          Total: {getTotal()}
+        </div>
+        <div className="flex gap-3 flex-shrink-0">
           <button
             onClick={refreshData}
-            className="h-10 px-4 rounded-xl border border-subtle bg-surface-secondary text-sm text-foreground hover:border-primary-400">
+            className="h-10 px-4 rounded-xl border border-subtle bg-surface-secondary text-sm text-foreground hover:border-primary-400 whitespace-nowrap">
             Refresh
           </button>
           <button
             onClick={handleSignOut}
-            className="h-10 px-4 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700">
+            className="h-10 px-4 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 whitespace-nowrap">
             Sign out
           </button>
         </div>
@@ -747,11 +786,58 @@ export function AdminDashboard() {
     );
   };
 
+  const exportIbanToCSV = () => {
+    if (ibanSubmissions.length === 0) {
+      toast.error('No IBAN submissions to export');
+      return;
+    }
+
+    // Заголовки CSV
+    const headers = ['ID', 'Email', 'IBAN', 'Created At'];
+    
+    // Конвертуємо дані в CSV формат
+    const csvRows = [
+      headers.join(','),
+      ...ibanSubmissions.map((submission) => {
+        return [
+          submission.id,
+          `"${submission.email}"`,
+          `"${submission.iban}"`,
+          `"${new Date(submission.createdAt).toLocaleString()}"`,
+        ].join(',');
+      }),
+    ];
+
+    const csvContent = csvRows.join('\n');
+    
+    // Створюємо Blob з CSV даними
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    // Встановлюємо назву файлу з поточною датою
+    const fileName = `iban-submissions-${new Date().toISOString().split('T')[0]}.csv`;
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('IBAN submissions exported successfully');
+  };
+
   const renderIban = () => (
     <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">IBAN Submissions</h3>
-        <button className="text-sm text-primary-500 hover:text-primary-600" onClick={refreshData}>
+        <button
+          className="text-sm text-primary-500 hover:text-primary-600"
+          onClick={() => {
+            refreshData();
+            fetchIbanSubmissions();
+          }}>
           Refresh
         </button>
       </div>
@@ -769,20 +855,56 @@ export function AdminDashboard() {
           className="h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
         />
       </div>
-      <div className="rounded-2xl border border-subtle bg-surface-secondary p-8 text-center text-muted-foreground">
-        {ibanSubmissionsMock.length === 0 ? (
-          <>
-            No IBAN submissions found
-            <div className="mt-4 flex justify-center">
+      <div className="rounded-2xl border border-subtle bg-surface-secondary p-8">
+        {ibanLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+          </div>
+        ) : ibanSubmissions.length === 0 ? (
+          <div className="text-center text-muted-foreground">
+            <p className="mb-4">No IBAN submissions found</p>
+            <button
+              className="h-10 px-4 rounded-xl border border-subtle bg-surface text-sm text-foreground hover:border-primary-400"
+              onClick={exportIbanToCSV}
+              disabled>
+              Export CSV
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-foreground font-medium">
+                Found {ibanSubmissions.length} submission{ibanSubmissions.length !== 1 ? 's' : ''}
+              </p>
               <button
-                className="h-10 px-4 rounded-xl border border-subtle bg-surface text-sm text-foreground hover:border-primary-400"
-                onClick={() => alert('IBAN export coming soon')}>
+                className="h-10 px-4 rounded-xl bg-primary-600 text-white text-sm font-medium hover:bg-primary-700"
+                onClick={exportIbanToCSV}>
                 Export CSV
               </button>
             </div>
-          </>
-        ) : (
-          JSON.stringify(ibanSubmissionsMock)
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-surface border-b border-subtle">
+                  <tr>
+                    <th className="p-3 text-left text-muted-foreground">Email</th>
+                    <th className="p-3 text-left text-muted-foreground">IBAN</th>
+                    <th className="p-3 text-left text-muted-foreground">Created At</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ibanSubmissions.map((submission: IbanSubmission) => (
+                    <tr key={submission.id} className="border-b border-subtle/60 last:border-none">
+                      <td className="p-3 text-foreground">{submission.email}</td>
+                      <td className="p-3 text-foreground font-mono text-xs">{submission.iban}</td>
+                      <td className="p-3 text-muted-foreground">
+                        {new Date(submission.createdAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -790,13 +912,18 @@ export function AdminDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto py-10 text-foreground">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        {renderTabs()}
+      {/* Fixed Header */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-subtle pb-4 mb-6 -mx-4 px-4 pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <h1 className="text-3xl font-bold whitespace-nowrap">Admin Dashboard</h1>
+          <div className="flex-shrink-0">
+            {renderTabs()}
+          </div>
+        </div>
+        {renderSummary()}
       </div>
-      {renderSummary()}
 
-      <div className="mt-8 space-y-8">
+      <div className="space-y-8">
         {activeTab === 'listings' && (
           <>
             {renderCreateForm()}
