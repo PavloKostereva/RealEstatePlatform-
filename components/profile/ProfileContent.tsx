@@ -71,6 +71,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   const [listingsLoading, setListingsLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [activeBookingTab, setActiveBookingTab] = useState<'my-bookings' | 'for-listings'>('my-bookings');
   const [editData, setEditData] = useState({ name: '', phone: '', location: '', bio: '' });
   const [expandedSections, setExpandedSections] = useState({
     personalInfo: false,
@@ -82,6 +83,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
     affiliate: false,
   });
   const [showSupportChat, setShowSupportChat] = useState(false);
+  const [earningsPeriod, setEarningsPeriod] = useState<'month' | 'quarter' | 'year'>('month');
 
   const topRef = useRef<HTMLDivElement>(null);
   const quickActionsRef = useRef<HTMLDivElement>(null);
@@ -428,6 +430,18 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             />
           </svg>
         );
+      case 'Support':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        );
+      case 'Affiliate Code':
+        return (
+          <svg className={iconClass} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
       default:
         return null;
     }
@@ -573,7 +587,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 onClick={() => toggleSection('personalInfo')}
                 className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">👤</span>
+                  {getIcon('My Profile')}
                   <h3 className="text-lg font-semibold text-foreground">Personal info</h3>
                 </div>
                 <span className="text-muted-foreground text-xl transition-transform duration-200">
@@ -702,7 +716,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 onClick={() => toggleSection('documents')}
                 className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">📄</span>
+                  {getIcon('Documents')}
                   <h3 className="text-lg font-semibold text-foreground">Documents</h3>
                 </div>
                 <span className="text-muted-foreground text-xl transition-transform duration-200">
@@ -752,6 +766,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 onClick={() => toggleSection('messages')}
                 className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
                 <div className="flex items-center gap-3">
+                  {getIcon('Messages')}
                   <h3 className="text-lg font-semibold text-foreground">Messages</h3>
                 </div>
                 <span className="text-muted-foreground text-xl transition-transform duration-200">
@@ -777,6 +792,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 onClick={() => toggleSection('support')}
                 className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
                 <div className="flex items-center gap-3">
+                  {getIcon('Support')}
                   <h3 className="text-lg font-semibold text-foreground">Support</h3>
                 </div>
                 <span className="text-muted-foreground text-xl transition-transform duration-200">
@@ -830,7 +846,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 onClick={() => toggleSection('bookings')}
                 className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">📅</span>
+                  {getIcon('Bookings')}
                   <h3 className="text-lg font-semibold text-foreground">Bookings</h3>
                 </div>
                 <span className="text-muted-foreground text-xl transition-transform duration-200">
@@ -841,22 +857,49 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 <div className="px-6 pb-6 pt-0 transition-all duration-300 ease-in-out">
                   <div className="mt-4 space-y-4">
                     <div className="flex gap-2 rounded-xl bg-surface-secondary p-1">
-                      <button className="flex-1 h-9 rounded-lg bg-primary-600 text-white text-sm font-medium">
+                      <button
+                        onClick={() => setActiveBookingTab('my-bookings')}
+                        className={`flex-1 h-9 rounded-lg text-sm font-medium transition-colors ${
+                          activeBookingTab === 'my-bookings'
+                            ? 'bg-primary-600 text-white'
+                            : 'text-muted-foreground hover:bg-surface'
+                        }`}>
                         My bookings
                       </button>
-                      <button className="flex-1 h-9 rounded-lg text-sm font-medium text-muted-foreground hover:bg-surface">
+                      <button
+                        onClick={() => setActiveBookingTab('for-listings')}
+                        className={`flex-1 h-9 rounded-lg text-sm font-medium transition-colors ${
+                          activeBookingTab === 'for-listings'
+                            ? 'bg-primary-600 text-white'
+                            : 'text-muted-foreground hover:bg-surface'
+                        }`}>
                         For my listings
                       </button>
                     </div>
                     <div className="space-y-3 text-sm text-muted-foreground">
-                      <div>
-                        <p className="font-medium text-foreground">Current</p>
-                        <p>No items.</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">History</p>
-                        <p>No items.</p>
-                      </div>
+                      {activeBookingTab === 'my-bookings' ? (
+                        <>
+                          <div>
+                            <p className="font-medium text-foreground">Current</p>
+                            <p>No items.</p>
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">History</p>
+                            <p>No items.</p>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div>
+                            <p className="font-medium text-foreground">Current</p>
+                            <p>No items.</p>
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">History</p>
+                            <p>No items.</p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -871,7 +914,9 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 onClick={() => toggleSection('listings')}
                 className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">🏷️</span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
                   <h3 className="text-lg font-semibold text-foreground">Listings</h3>
                 </div>
                 <span className="text-muted-foreground text-xl transition-transform duration-200">
@@ -936,7 +981,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                     {isOwnProfile && (
                       <div className="mt-4 flex justify-end">
                         <Link
-                          href="/listings"
+                          href={`/${locale}/my-listings`}
                           className="rounded-xl border border-subtle bg-surface-secondary text-sm font-medium px-4 py-2 text-foreground hover:border-primary-400">
                           Open My listings
                         </Link>
@@ -955,7 +1000,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 onClick={() => toggleSection('affiliate')}
                 className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">🎁</span>
+                  {getIcon('Affiliate Code')}
                   <h3 className="text-lg font-semibold text-foreground">Affiliate Code</h3>
                 </div>
                 <span className="text-muted-foreground text-xl transition-transform duration-200">
