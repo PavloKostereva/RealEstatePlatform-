@@ -6,7 +6,7 @@ let stripe: Stripe | null = null;
 
 if (process.env.STRIPE_SECRET_KEY) {
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2024-11-20.acacia',
+    apiVersion: '2025-10-29.clover',
   });
 }
 
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       console.error('STRIPE_SECRET_KEY is not set');
       return NextResponse.json(
         { error: 'Stripe is not configured. Please check your environment variables.' },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -83,11 +83,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (error) {
     console.error('Error creating Stripe checkout session:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create checkout session';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to create checkout session';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-
