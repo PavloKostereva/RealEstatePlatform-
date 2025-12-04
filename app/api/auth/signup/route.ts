@@ -124,6 +124,8 @@ export async function POST(request: NextRequest) {
       message: string;
       code: string;
       details?: string | null;
+      stack?: string;
+      fullError?: string;
     } = {
       error: 'Failed to create user',
       message: errorMessage,
