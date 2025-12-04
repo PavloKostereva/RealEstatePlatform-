@@ -48,8 +48,8 @@ export function HomeMapWithListings() {
   const listings = useMemo(() => {
     if (!listingsData?.listings) return [];
     return listingsData.listings.filter(
-      (l: Listing) => Number.isFinite(l.latitude) && Number.isFinite(l.longitude),
-    ) as Listing[];
+      (l) => Number.isFinite(l.latitude) && Number.isFinite(l.longitude),
+    ) as unknown as Listing[];
   }, [listingsData]);
 
   const [center, setCenter] = useState({ lat: 54.5, lng: 15.0 }); // Center of Europe (shifted north to show all of Europe)
@@ -61,7 +61,6 @@ export function HomeMapWithListings() {
     undefined,
   );
 
-  // Мемоізуємо функцію для обчислення відстані
   const calculateDistance = useCallback(
     (lat1: number, lon1: number, lat2: number, lon2: number): number => {
       const R = 6371; // Радіус Землі в кілометрах
