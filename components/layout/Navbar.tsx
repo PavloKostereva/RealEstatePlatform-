@@ -142,7 +142,7 @@ export function Navbar() {
                 }`}>
                 {t('myListings')}
               </Link>
-              {session?.user.role === 'ADMIN' && (
+              {session?.user.email === 'pavlokostereva@gmail.com' && (
                 <Link
                   href={navPaths.admin}
                   prefetch={true}
@@ -249,7 +249,7 @@ export function Navbar() {
                 onClick={() => setIsMenuOpen(false)}>
                 {t('myListings')}
               </Link>
-              {session?.user.role === 'ADMIN' && (
+              {session?.user.email === 'pavlokostereva@gmail.com' && (
                 <Link
                   href={navPaths.admin}
                   prefetch={true}

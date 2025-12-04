@@ -599,6 +599,54 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
     }
   };
 
+  const handleNavClick = (item: {
+    label: string;
+    ref?: React.RefObject<HTMLDivElement>;
+    action?: () => void;
+  }) => {
+    if (item.action) {
+      item.action();
+      return;
+    }
+
+    // Визначаємо, яку секцію потрібно розгорнути
+    let sectionToExpand: keyof typeof expandedSections | null = null;
+
+    switch (item.label) {
+      case 'Dashboard':
+        // Dashboard завжди на початку, не потребує розгортання
+        break;
+      case 'Documents':
+        sectionToExpand = 'documents';
+        break;
+      case 'Payments':
+        // Payments - це quickActions, не має окремої секції для розгортання
+        break;
+      case 'Calendar':
+      case 'Bookings':
+        sectionToExpand = 'bookings';
+        break;
+      case 'My Profile':
+        sectionToExpand = 'personalInfo';
+        break;
+      case 'Messages':
+        sectionToExpand = 'messages';
+        break;
+    }
+
+    // Розгортаємо секцію, якщо вона згорнута
+    if (sectionToExpand && !expandedSections[sectionToExpand]) {
+      toggleSection(sectionToExpand);
+    }
+
+    // Прокручуємо до секції
+    if (item.ref) {
+      setTimeout(() => {
+        scrollToSection(item.ref);
+      }, 100); // Невелика затримка для завершення анімації розгортання
+    }
+  };
+
   const navItems = [
     { label: 'Dashboard', icon: getIcon('Dashboard'), ref: topRef, active: true },
     { label: 'Documents', icon: getIcon('Documents'), ref: documentsRef },
@@ -628,10 +676,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                     ? 'bg-primary-600 text-white shadow'
                     : 'text-muted-foreground hover:bg-surface-secondary'
                 }`}
-                onClick={() => {
-                  if (item.action) item.action();
-                  else scrollToSection(item.ref);
-                }}>
+                onClick={() => handleNavClick(item)}>
                 <span>{item.icon}</span>
                 <span>{item.label}</span>
               </button>

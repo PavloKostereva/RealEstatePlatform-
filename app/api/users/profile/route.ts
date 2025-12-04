@@ -13,7 +13,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = getSupabaseClient();
+    const supabase = getSupabaseClient(true);
 
     const formData = await request.formData();
     const name = formData.get('name') as string;
@@ -53,43 +53,46 @@ export async function PUT(request: NextRequest) {
       avatar: avatarUrl || null,
     };
 
-    // Спробуємо оновити з location та bio, якщо вони існують в базі
-    // Якщо ні - оновимо тільки базові поля
-    let updated: { [key: string]: unknown } | null = null;
-    let error: { message?: string } | null = null;
+    if (location !== null && location !== undefined) {
+      updateData.location = location || null;
+    }
+    if (bio !== null && bio !== undefined) {
+      updateData.bio = bio || null;
+    }
 
-    // Спочатку спробуємо з усіма полями (включаючи location та bio)
-    const updateWithOptional = {
-      ...updateData,
-      ...(location !== null && location !== undefined && { location: location || null }),
-      ...(bio !== null && bio !== undefined && { bio: bio || null }),
-    };
+    let updated: { [key: string]: unknown } | null = null;
+    let error: { message?: string; code?: string } | null = null;
 
     const result1 = await supabase
       .from('User')
-      .update(updateWithOptional)
+      .update(updateData)
       .eq('id', session.user.id)
-      .select('id, email, name, phone, avatar, role')
+      .select('id, email, name, phone, avatar, role, location, bio')
       .single();
 
     if (result1.error) {
-      // Якщо помилка (можливо через неіснуючі колонки location/bio), спробуємо без них
-      console.log(
-        'First update attempt failed, trying without optional fields:',
-        result1.error.message,
-      );
+      if (result1.error.code === '42703' || result1.error.message?.includes('column')) {
+        console.log(
+          'First update attempt failed (possibly missing columns), trying without optional fields:',
+          result1.error.message,
+        );
 
-      const result2 = await supabase
-        .from('User')
-        .update(updateData)
-        .eq('id', session.user.id)
-        .select('id, email, name, phone, avatar, role')
-        .single();
+        const { location: _, bio: __, ...baseUpdateData } = updateData;
 
-      if (result2.error) {
-        error = result2.error;
+        const result2 = await supabase
+          .from('User')
+          .update(baseUpdateData)
+          .eq('id', session.user.id)
+          .select('id, email, name, phone, avatar, role')
+          .single();
+
+        if (result2.error) {
+          error = result2.error;
+        } else {
+          updated = result2.data;
+        }
       } else {
-        updated = result2.data;
+        error = result1.error;
       }
     } else {
       updated = result1.data;
@@ -97,7 +100,10 @@ export async function PUT(request: NextRequest) {
 
     if (error) {
       console.error('Supabase update error:', error);
-      throw error;
+      return NextResponse.json(
+        { error: error.message || 'Failed to update profile', details: error },
+        { status: 500 },
+      );
     }
 
     // Повертаємо дані (location та bio будуть null, якщо не існують в базі)
@@ -110,8 +116,8 @@ export async function PUT(request: NextRequest) {
       email: updated.email,
       name: updated.name,
       phone: updated.phone,
-      location: updated.location || null,
-      bio: updated.bio || null,
+      location: (updated.location as string | null) || null,
+      bio: (updated.bio as string | null) || null,
       avatar: updated.avatar,
       role: updated.role,
     });
