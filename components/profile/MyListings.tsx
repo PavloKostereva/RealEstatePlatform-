@@ -8,15 +8,19 @@ interface MyListingsProps {
   userId: string
 }
 
+interface Listing {
+  id: string;
+  title: string;
+  price: number;
+  currency?: string;
+  address: string;
+  status: string;
+  type?: string;
+  images?: string[];
+}
+
 export function MyListings({ userId }: MyListingsProps) {
-  const [listings, setListings] = useState<Array<{
-    id: string;
-    title: string;
-    price: number;
-    address: string;
-    status: string;
-    [key: string]: unknown;
-  }>>([])
+  const [listings, setListings] = useState<Listing[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -108,7 +112,7 @@ export function MyListings({ userId }: MyListingsProps) {
                 <div className="p-4">
                   <h3 className="font-semibold mb-2 line-clamp-2">{listing.title}</h3>
                   <p className="text-primary-600 font-bold mb-2">
-                    {listing.price.toLocaleString()} {listing.currency}
+                    {listing.price.toLocaleString()} {listing.currency || 'UAH'}
                   </p>
                   <p className="text-gray-600 text-sm">{listing.address}</p>
                 </div>

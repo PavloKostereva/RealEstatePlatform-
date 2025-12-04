@@ -78,7 +78,7 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
                     (position) => {
                       const { latitude, longitude } = position.coords;
                       setNearMe(true);
-                      (window as { handleNearMeMap: (lat: number, lng: number) => void }).handleNearMeMap(latitude, longitude);
+                      (window as unknown as { handleNearMeMap: (lat: number, lng: number) => void }).handleNearMeMap(latitude, longitude);
                       setGettingLocation(false);
                     },
                     (error: GeolocationPositionError) => {
