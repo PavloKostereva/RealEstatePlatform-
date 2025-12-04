@@ -139,7 +139,9 @@ export function ListingLocationPicker({ value, onChange }: ListingLocationPicker
             if (!markerRef.current) {
               markerRef.current = L.marker(latLng, { draggable: true })
                 .addTo(mapRef.current)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .on('moveend', (e: any) => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   const newLatLng = (e.target as any).getLatLng();
                   onChangeRef.current({ lat: newLatLng.lat, lng: newLatLng.lng });
                 });
@@ -217,7 +219,9 @@ export function ListingLocationPicker({ value, onChange }: ListingLocationPicker
             // Створюємо новий маркер
             markerRef.current = L.marker(latLng, { draggable: true })
               .addTo(mapRef.current)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               .on('moveend', (e: any) => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const newLatLng = (e.target as any).getLatLng();
                 onChangeRef.current({ lat: newLatLng.lat, lng: newLatLng.lng });
               });

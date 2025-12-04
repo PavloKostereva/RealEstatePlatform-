@@ -123,11 +123,13 @@ export function MapView({
     });
 
     // Обгорнути критичні методи Leaflet для безпечної обробки помилок
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapInstance = map.current as any;
 
     // Обгорнути containerPointToLatLng
     if (mapInstance.containerPointToLatLng && !mapInstance.containerPointToLatLng._wrapped) {
       const originalContainerPointToLatLng = mapInstance.containerPointToLatLng.bind(mapInstance);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mapInstance.containerPointToLatLng = function (point: any) {
         try {
           if (!this._loaded || !this._container || !this._mapPane) {
@@ -548,6 +550,7 @@ export function MapView({
         if (!mapInstance._loaded || !mapInstance._container || !mapInstance._panes) {
           setTimeout(() => {
             if (map.current) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const retryInstance = map.current as any;
               if (retryInstance._loaded && retryInstance._container && retryInstance._panes) {
                 addControls();
@@ -978,6 +981,7 @@ export function MapView({
 
       function processClusters() {
         if (!map.current) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapInst = map.current as any;
         if (!mapInst._loaded || !mapInst._container) return;
 
@@ -1213,10 +1217,12 @@ export function MapView({
         }
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const mapInstance = map.current as any;
       if (!mapInstance._loaded || !mapInstance._container) {
         // Wait for map to be fully ready
         setTimeout(() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mapInst = map.current as any;
           if (map.current && mapInst._loaded && mapInst._container) {
             processClusters();
@@ -1237,6 +1243,7 @@ export function MapView({
 
         const handleZoomChange = () => {
           if (!map.current) return;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const mapInst = map.current as any;
           if (!mapInst._loaded || !mapInst._container) return;
 
@@ -1245,7 +1252,7 @@ export function MapView({
             if (marker && map.current) {
               try {
                 map.current.removeLayer(marker);
-              } catch (error) {
+              } catch {
                 // Ignore errors when removing markers
               }
             }
