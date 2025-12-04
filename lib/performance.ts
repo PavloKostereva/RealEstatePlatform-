@@ -1,5 +1,5 @@
 export const performanceUtils = {
-  measureFunction: <T extends (...args: any[]) => any>(fn: T, label?: string): T => {
+  measureFunction: <T extends (...args: unknown[]) => unknown>(fn: T, label?: string): T => {
     return ((...args: Parameters<T>) => {
       const start = performance.now();
       const result = fn(...args);
@@ -13,7 +13,7 @@ export const performanceUtils = {
     }) as T;
   },
 
-  debounce: <T extends (...args: any[]) => any>(
+  debounce: <T extends (...args: unknown[]) => unknown>(
     fn: T,
     delay: number,
   ): ((...args: Parameters<T>) => void) => {
@@ -25,7 +25,7 @@ export const performanceUtils = {
     };
   },
 
-  throttle: <T extends (...args: any[]) => any>(
+  throttle: <T extends (...args: unknown[]) => unknown>(
     fn: T,
     limit: number,
   ): ((...args: Parameters<T>) => void) => {
@@ -41,7 +41,13 @@ export const performanceUtils = {
   },
 };
 
-export const reportWebVitals = (metric: any) => {
+export const reportWebVitals = (metric: {
+  id: string;
+  name: string;
+  value: number;
+  delta: number;
+  entries: PerformanceEntry[];
+}) => {
   if (process.env.NODE_ENV === 'development') {
     console.log('[Web Vitals]', metric);
   }

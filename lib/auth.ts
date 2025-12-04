@@ -96,7 +96,7 @@ export const authOptions: NextAuthOptions = {
     error: '/how-it-works',
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       // Обробка Google, Discord та LinkedIn авторизації
       if (
         account?.provider === 'google' ||
@@ -179,7 +179,7 @@ export const authOptions: NextAuthOptions = {
             // Оновлюємо інформацію користувача якщо вона змінилась
             const tableName = checkError?.code === '42P01' ? 'user' : 'User';
 
-            const updates: any = {};
+            const updates: { name?: string; avatar?: string } = {};
             if (user.name && user.name !== existingUser.name) {
               updates.name = user.name;
             }
@@ -205,11 +205,11 @@ export const authOptions: NextAuthOptions = {
       // Для Credentials provider - стандартна логіка
       return true;
     },
-    async jwt({ token, user, account, trigger }) {
+    async jwt({ token, user, trigger }) {
       // При першому вході або оновленні сесії
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role || 'USER';
+        token.role = (user as { role?: string }).role || 'USER';
         token.email = user.email;
       }
 
