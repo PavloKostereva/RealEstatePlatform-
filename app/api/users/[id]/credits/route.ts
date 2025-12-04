@@ -4,10 +4,6 @@ import { authOptions } from '@/lib/auth';
 import { getSupabaseClient } from '@/lib/supabase';
 import { headers } from 'next/headers';
 
-/**
- * GET /api/users/[id]/credits - Отримати кредити користувача
- * PUT /api/users/[id]/credits - Оновити кредити користувача (тільки для адмінів)
- */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } },
@@ -16,7 +12,9 @@ export async function GET(
     const headersList = headers();
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
+      req: { headers: Object.fromEntries(headersList.entries()) } as {
+        headers: Record<string, string>;
+      },
     });
 
     if (!session) {
@@ -43,7 +41,10 @@ export async function GET(
     if (error) {
       // Якщо помилка через неіснуючу колонку credits, повертаємо 0
       const errorMessage = error.message || '';
-      if (error.code === '42703' || (errorMessage.includes('column') && errorMessage.includes('credits'))) {
+      if (
+        error.code === '42703' ||
+        (errorMessage.includes('column') && errorMessage.includes('credits'))
+      ) {
         return NextResponse.json({ credits: 0, message: 'Credits field not found in database' });
       }
       console.error('Error fetching user credits:', error);
@@ -71,7 +72,9 @@ export async function PUT(
     const headersList = headers();
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
+      req: { headers: Object.fromEntries(headersList.entries()) } as {
+        headers: Record<string, string>;
+      },
     });
 
     if (!session) {
@@ -102,7 +105,11 @@ export async function PUT(
 
     if (fetchError) {
       // Якщо колонка credits не існує, спробуємо створити її через SQL або просто встановити значення
-      if (fetchError.code === '42703' || fetchError.message?.includes('column')?.includes('credits')) {
+      const fetchErrorMessage = fetchError.message || '';
+      if (
+        fetchError.code === '42703' ||
+        (fetchErrorMessage.includes('column') && fetchErrorMessage.includes('credits'))
+      ) {
         console.log('Credits column does not exist, attempting to add credits field...');
         // Спробуємо оновити без credits, а потім додамо через SQL
         // Або просто повернемо помилку з інструкцією
@@ -144,7 +151,11 @@ export async function PUT(
 
     if (updateError) {
       // Якщо помилка через неіснуючу колонку
-      if (updateError.code === '42703' || updateError.message?.includes('column')?.includes('credits')) {
+      const updateErrorMessage = updateError.message || '';
+      if (
+        updateError.code === '42703' ||
+        (updateErrorMessage.includes('column') && updateErrorMessage.includes('credits'))
+      ) {
         return NextResponse.json(
           {
             error: 'Credits column does not exist in User table',
@@ -173,4 +184,3 @@ export async function PUT(
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-
