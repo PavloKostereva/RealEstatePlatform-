@@ -42,7 +42,8 @@ export async function GET(
 
     if (error) {
       // Якщо помилка через неіснуючу колонку credits, повертаємо 0
-      if (error.code === '42703' || error.message?.includes('column')?.includes('credits')) {
+      const errorMessage = error.message || '';
+      if (error.code === '42703' || (errorMessage.includes('column') && errorMessage.includes('credits'))) {
         return NextResponse.json({ credits: 0, message: 'Credits field not found in database' });
       }
       console.error('Error fetching user credits:', error);
