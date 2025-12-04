@@ -44,13 +44,13 @@ export async function PUT(request: NextRequest) {
     const updateData: {
       name: string | null;
       phone: string | null;
-      avatar: string;
+      avatar: string | null;
       location?: string | null;
       bio?: string | null;
     } = {
       name: name || null,
       phone: phone || null,
-      avatar: avatarUrl,
+      avatar: avatarUrl || null,
     };
 
     // Спробуємо оновити з location та bio, якщо вони існують в базі
@@ -101,6 +101,10 @@ export async function PUT(request: NextRequest) {
     }
 
     // Повертаємо дані (location та bio будуть null, якщо не існують в базі)
+    if (!updated) {
+      return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
+    }
+
     return NextResponse.json({
       id: updated.id,
       email: updated.email,
