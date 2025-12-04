@@ -8,6 +8,7 @@ import { CheckoutModal } from '@/components/listings/CheckoutModal';
 import { useListings } from '@/hooks/useListings';
 import { ListingGridSkeleton } from '@/components/skeletons/ListingGridSkeleton';
 import { MapSkeleton } from '@/components/skeletons/MapSkeleton';
+import { useFilters } from '@/contexts/FilterContext';
 
 // Dynamically import MapView to avoid SSR issues with Leaflet
 const MapView = dynamic(
@@ -31,12 +32,14 @@ interface Listing {
   images: string[];
   area?: number;
   rooms?: number;
+  createdAt?: string;
 }
 
 const viewModes = ['grid', 'list'] as const;
 
 export function HomeMapWithListings() {
   const t = useTranslations('home');
+  const { filters } = useFilters();
 
   // Використовуємо React Query для завантаження listings
   const { data: listingsData, isLoading: loading } = useListings({
@@ -44,13 +47,55 @@ export function HomeMapWithListings() {
     limit: 1000,
   });
 
-  // Мемоізуємо listings з координатами
+  // Мемоізуємо listings з координатами та застосовуємо фільтри
   const listings = useMemo(() => {
     if (!listingsData?.listings) return [];
-    return listingsData.listings.filter(
+
+    let filtered = listingsData.listings.filter(
       (l) => Number.isFinite(l.latitude) && Number.isFinite(l.longitude),
     ) as unknown as Listing[];
-  }, [listingsData]);
+
+    // Фільтр по запиту (query)
+    if (filters.query) {
+      const queryLower = filters.query.toLowerCase();
+      filtered = filtered.filter(
+        (l) =>
+          l.title.toLowerCase().includes(queryLower) ||
+          l.address.toLowerCase().includes(queryLower),
+      );
+    }
+
+    // Фільтр по розміру (size)
+    if (filters.size) {
+      filtered = filtered.filter((l) => {
+        if (!l.area) return false;
+        if (filters.size === 'small') return l.area < 50;
+        if (filters.size === 'medium') return l.area >= 50 && l.area < 100;
+        if (filters.size === 'large') return l.area >= 100;
+        return true;
+      });
+    }
+
+    // Фільтр по мітці (label) - наприклад, "new"
+    if (filters.label === 'new') {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      filtered = filtered.filter((l) => {
+        if (!l.createdAt) return false;
+        const createdAt = new Date(l.createdAt);
+        return createdAt >= thirtyDaysAgo;
+      });
+    }
+
+    // Сортування по ціні
+    if (filters.sortBy === 'priceAsc') {
+      filtered = [...filtered].sort((a, b) => a.price - b.price);
+    } else if (filters.sortBy === 'priceDesc') {
+      filtered = [...filtered].sort((a, b) => b.price - a.price);
+    }
+
+    return filtered;
+  }, [listingsData, filters]);
 
   const [center, setCenter] = useState({ lat: 54.5, lng: 15.0 }); // Center of Europe (shifted north to show all of Europe)
   const [mapZoom, setMapZoom] = useState(4); // Zoom to show Europe (continental view)

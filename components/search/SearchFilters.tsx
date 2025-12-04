@@ -1,51 +1,81 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
+import { useFilters } from '@/contexts/FilterContext';
 
 interface SearchFiltersProps {
   onNearMeClick?: (lat: number, lng: number) => void;
+  useLocalFilters?: boolean; // Новий проп для локальних фільтрів
 }
 
-export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
+export function SearchFilters({ onNearMeClick, useLocalFilters = false }: SearchFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const locale = useLocale();
   const t = useTranslations('filters');
   const tCommon = useTranslations('common');
-  const [query, setQuery] = useState(searchParams.get('q') || '');
-  const [nearMe, setNearMe] = useState(searchParams.get('nearMe') === 'true');
-  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || '');
-  const [size, setSize] = useState(searchParams.get('size') || '');
-  const [label, setLabel] = useState(searchParams.get('label') || '');
+  const { filters, setFilters, resetFilters: resetContextFilters } = useFilters();
+  
+  const [query, setQuery] = useState(useLocalFilters ? filters.query : (searchParams.get('q') || ''));
+  const [nearMe, setNearMe] = useState(useLocalFilters ? filters.nearMe : (searchParams.get('nearMe') === 'true'));
+  const [sortBy, setSortBy] = useState(useLocalFilters ? filters.sortBy : (searchParams.get('sortBy') || ''));
+  const [size, setSize] = useState(useLocalFilters ? filters.size : (searchParams.get('size') || ''));
+  const [label, setLabel] = useState(useLocalFilters ? filters.label : (searchParams.get('label') || ''));
   const [gettingLocation, setGettingLocation] = useState(false);
 
+  // Синхронізуємо локальний стан з контекстом
+  useEffect(() => {
+    if (useLocalFilters) {
+      setQuery(filters.query);
+      setNearMe(filters.nearMe);
+      setSortBy(filters.sortBy);
+      setSize(filters.size);
+      setLabel(filters.label);
+    }
+  }, [filters, useLocalFilters]);
+
   const applyFilters = () => {
-    const params = new URLSearchParams();
-    if (query) params.set('q', query);
-    if (nearMe) params.set('nearMe', 'true');
-    if (sortBy) params.set('sortBy', sortBy);
-    if (size) params.set('size', size);
-    if (label) params.set('label', label);
+    if (useLocalFilters) {
+      // Використовуємо локальні фільтри через контекст
+      setFilters({ query, nearMe, sortBy, size, label });
+    } else {
+      // Стара логіка з router.push для інших сторінок
+      const params = new URLSearchParams();
+      if (query) params.set('q', query);
+      if (nearMe) params.set('nearMe', 'true');
+      if (sortBy) params.set('sortBy', sortBy);
+      if (size) params.set('size', size);
+      if (label) params.set('label', label);
 
-    const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
-    const targetPath = isHomePage ? `/${locale}` : `/${locale}/listings`;
-    const url = params.toString() ? `${targetPath}?${params.toString()}` : targetPath;
+      const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
+      const targetPath = isHomePage ? `/${locale}` : `/${locale}/listings`;
+      const url = params.toString() ? `${targetPath}?${params.toString()}` : targetPath;
 
-    router.push(url);
+      router.push(url);
+    }
   };
 
   const resetFilters = () => {
-    setQuery('');
-    setNearMe(false);
-    setSortBy('');
-    setSize('');
-    setLabel('');
-    const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
-    const targetPath = isHomePage ? `/${locale}` : `/${locale}/listings`;
-    router.push(targetPath);
+    if (useLocalFilters) {
+      setQuery('');
+      setNearMe(false);
+      setSortBy('');
+      setSize('');
+      setLabel('');
+      resetContextFilters();
+    } else {
+      setQuery('');
+      setNearMe(false);
+      setSortBy('');
+      setSize('');
+      setLabel('');
+      const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
+      const targetPath = isHomePage ? `/${locale}` : `/${locale}/listings`;
+      router.push(targetPath);
+    }
   };
 
   return (
@@ -54,17 +84,29 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
         <div className="flex-1 min-w-[240px]">
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (useLocalFilters) {
+                setFilters({ query: e.target.value });
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !useLocalFilters) {
+                applyFilters();
+              }
+            }}
             placeholder={t('searchPlaceholder')}
             className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
-        <button
-          onClick={applyFilters}
-          className="h-11 px-5 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 transition">
-          {tCommon('search')}
-        </button>
+        {!useLocalFilters && (
+          <button
+            onClick={applyFilters}
+            className="h-11 px-5 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 transition">
+            {tCommon('search')}
+          </button>
+        )}
 
         <button
           onClick={async () => {
@@ -182,7 +224,11 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
             value={sortBy}
             onChange={(e) => {
               setSortBy(e.target.value);
-              setTimeout(applyFilters, 0);
+              if (useLocalFilters) {
+                setFilters({ sortBy: e.target.value });
+              } else {
+                setTimeout(applyFilters, 0);
+              }
             }}
             className="h-11 appearance-none bg-surface-secondary border border-subtle rounded-xl px-4 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="">{t('priceDefault')}</option>
@@ -205,7 +251,11 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
             value={size}
             onChange={(e) => {
               setSize(e.target.value);
-              setTimeout(applyFilters, 0);
+              if (useLocalFilters) {
+                setFilters({ size: e.target.value });
+              } else {
+                setTimeout(applyFilters, 0);
+              }
             }}
             className="h-11 appearance-none bg-surface-secondary border border-subtle rounded-xl px-4 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="">{t('sizeAllOption')}</option>
@@ -229,7 +279,11 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
             value={label}
             onChange={(e) => {
               setLabel(e.target.value);
-              setTimeout(applyFilters, 0);
+              if (useLocalFilters) {
+                setFilters({ label: e.target.value });
+              } else {
+                setTimeout(applyFilters, 0);
+              }
             }}
             className="h-11 appearance-none bg-surface-secondary border border-subtle rounded-xl px-4 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="">{t('labelsAll')}</option>

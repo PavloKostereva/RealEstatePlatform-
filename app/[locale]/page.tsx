@@ -19,7 +19,7 @@ export default async function HomePage() {
   return (
     <div className="container mx-auto px-4 py-6">
       <Hero />
-      <SearchFilters />
+      <SearchFilters useLocalFilters={true} />
       <HomeMapWithListings />
     </div>
   )
