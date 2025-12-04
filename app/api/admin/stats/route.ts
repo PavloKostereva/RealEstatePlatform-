@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
 import { headers } from 'next/headers';
 
-export async function GET(request?: NextRequest) {
+export async function GET() {
   try {
     // Отримуємо headers
     const headersList = headers();
@@ -18,7 +18,7 @@ export async function GET(request?: NextRequest) {
 
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     });
 
     if (!session) {

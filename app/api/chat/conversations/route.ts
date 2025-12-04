@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     // Отримуємо кількість непрочитаних повідомлень для кожної розмови
     if (conversations && conversations.length > 0) {
-      const conversationIds = conversations.map((c: any) => c.id);
+      const conversationIds = conversations.map((c: { id: string }) => c.id);
       const { data: unreadCounts } = await supabase
         .from('messages')
         .select('conversation_id')
@@ -50,13 +50,13 @@ export async function GET(request: NextRequest) {
         .eq('read', false)
         .neq('sender_id', session.user.id);
 
-      const unreadMap = new Map();
-      unreadCounts?.forEach((msg: any) => {
+      const unreadMap = new Map<string, number>();
+      unreadCounts?.forEach((msg: { conversation_id: string }) => {
         const count = unreadMap.get(msg.conversation_id) || 0;
         unreadMap.set(msg.conversation_id, count + 1);
       });
 
-      const conversationsWithUnread = conversations.map((conv: any) => ({
+      const conversationsWithUnread = conversations.map((conv: { id: string; [key: string]: unknown }) => ({
         ...conv,
         unread: unreadMap.get(conv.id) || 0,
       }));
@@ -65,10 +65,11 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(conversations || []);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching conversations:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to fetch conversations', details: error.message },
+      { error: 'Failed to fetch conversations', details: errorMessage },
       { status: 500 },
     );
   }
@@ -133,10 +134,11 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(conversation, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating conversation:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to create conversation', details: error.message },
+      { error: 'Failed to create conversation', details: errorMessage },
       { status: 500 },
     );
   }

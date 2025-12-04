@@ -138,7 +138,7 @@ export function AdminSupportChat() {
     }
   };
 
-  const markAsRead = async (conversationId: string) => {
+  const markAsRead = async () => {
     // Marking as read is handled automatically when fetching messages
     fetchConversations();
   };

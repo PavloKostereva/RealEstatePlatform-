@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const headersList = headers();
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     });
 
     if (!session) {
@@ -97,19 +97,19 @@ export async function POST(request: NextRequest) {
         data: submission,
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error saving IBAN:', error);
     return NextResponse.json({ error: 'Failed to save IBAN' }, { status: 500 });
   }
 }
 
 // GET - Отримати IBAN submissions (тільки для адміна)
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const headersList = headers();
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     });
 
     if (!session) {
@@ -176,8 +176,8 @@ export async function GET(request: NextRequest) {
 
       // Конвертуємо в формат submissions
       const submissions = (users || [])
-        .filter((user: any) => user.iban)
-        .map((user: any) => ({
+        .filter((user: { iban?: string | null }) => user.iban)
+        .map((user: { id: string; email: string; iban: string; updatedAt?: string | null }) => ({
           id: user.id,
           email: user.email,
           iban: user.iban,
@@ -186,7 +186,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(submissions);
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching IBAN submissions:', error);
     return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
   }

@@ -59,7 +59,7 @@ export function MapView({
     mozfullscreenchange: () => void;
     MSFullscreenChange: () => void;
   } | null>(null);
-  const t = useTranslations('map');
+  // const t = useTranslations('map'); // Reserved for future use
 
   const resolvedCenter = useMemo(() => {
     if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
@@ -678,7 +678,7 @@ export function MapView({
       if (map.current) {
         try {
           map.current.off(); // Видаляємо всі обробники подій
-        } catch (error) {
+        } catch {
           // Ігноруємо помилки під час cleanup
         }
       }
@@ -721,7 +721,7 @@ export function MapView({
           const mapInstance = map.current as L.Map;
           mapInstance.off('zoomend');
           mapInstance.off('zoom');
-        } catch (error) {
+        } catch {
           // Ігноруємо помилки під час cleanup
         }
       }
@@ -731,7 +731,7 @@ export function MapView({
         try {
           const mapInstance = map.current as L.Map;
           mapInstance.remove();
-        } catch (error) {
+        } catch {
           // Ігноруємо помилки під час cleanup
         }
         map.current = null;

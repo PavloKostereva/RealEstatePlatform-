@@ -8,7 +8,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { differenceInDays } from 'date-fns';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { SupportChat } from './SupportChat';
 import { useToast } from '@/components/ui/ToastContainer';
 
@@ -234,27 +233,28 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
     router.push('/how-it-works?logout=true');
   };
 
-  const handleApproveAll = async () => {
-    toast.info('Approve all listings is not implemented in this demo.');
-  };
+  // Reserved for future implementation
+  // const handleApproveAll = async () => {
+  //   toast.info('Approve all listings is not implemented in this demo.');
+  // };
 
-  const handleReject = (id: string) => {
-    toast.info(`Reject flow for listing ${id} is not implemented in this demo.`);
-  };
+  // const handleReject = (id: string) => {
+  //   toast.info(`Reject flow for listing ${id} is not implemented in this demo.`);
+  // };
 
-  const toggleFeatureList = () => {
-    toast.info('Toggle feature list is not implemented in this demo.');
-  };
+  // const toggleFeatureList = () => {
+  //   toast.info('Toggle feature list is not implemented in this demo.');
+  // };
 
-  const renderFeatureChip = (feature: string, idx: number) => {
-    return (
-      <span
-        key={idx}
-        className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-surface-secondary text-muted-foreground">
-        {feature}
-      </span>
-    );
-  };
+  // const renderFeatureChip = (feature: string, idx: number) => {
+  //   return (
+  //     <span
+  //       key={idx}
+  //       className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-surface-secondary text-muted-foreground">
+  //       {feature}
+  //     </span>
+  //   );
+  // };
 
   const handleEditProfile = () => {
     setEditMode(true);
@@ -944,8 +944,8 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                             </button>
                           </div>
                           <p className="text-sm text-muted-foreground mb-6">
-                            Need help? Contact our support team and we'll get back to you as soon as
-                            possible.
+                            Need help? Contact our support team and we&apos;ll get back to you as
+                            soon as possible.
                           </p>
                           <button
                             onClick={() => setShowSupportChat(true)}

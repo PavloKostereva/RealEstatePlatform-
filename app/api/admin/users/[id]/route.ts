@@ -13,7 +13,7 @@ export async function DELETE(
     const resolvedParams = params instanceof Promise ? await params : params;
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     });
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -13,7 +13,7 @@ export async function PUT(
     const resolvedParams = params instanceof Promise ? await params : params;
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     });
 
     if (!session) {
@@ -67,7 +67,7 @@ export async function PUT(
     }
 
     return NextResponse.json(updatedUser);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating user role:', error);
     return NextResponse.json({ error: 'Failed to update role' }, { status: 500 });
   }

@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAdminStats, useAdminListings } from '@/hooks/useAdmin';
 import { TableRowsSkeleton } from '@/components/skeletons/TableRowsSkeleton';
-import { StatsSkeleton } from '@/components/skeletons/StatsSkeleton';
 import { AdminSupportChat } from './AdminSupportChat';
 import { useToast } from '@/components/ui/ToastContainer';
 
@@ -108,7 +107,7 @@ export function AdminDashboard() {
   });
 
   // Використовуємо React Query для адмін даних
-  const { data: statsData, refetch: refetchStats, isLoading: statsLoading } = useAdminStats();
+  const { data: statsData, refetch: refetchStats } = useAdminStats();
   const {
     data: allListingsData,
     refetch: refetchAllListings,
@@ -120,7 +119,6 @@ export function AdminDashboard() {
     data: pendingListingsData,
     refetch: refetchPending,
     isLoading: pendingListingsLoading,
-    isError: pendingListingsError,
   } = useAdminListings('PENDING_REVIEW');
 
   // Синхронізуємо дані з React Query

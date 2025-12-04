@@ -13,7 +13,7 @@ export async function POST(
     const resolvedParams = params instanceof Promise ? await params : params
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     })
     if (!session || session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -56,10 +56,11 @@ export async function POST(
     }
 
     return NextResponse.json(listing)
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error approving listing:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to approve listing', details: error.message },
+      { error: 'Failed to approve listing', details: errorMessage },
       { status: 500 }
     )
   }

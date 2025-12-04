@@ -349,7 +349,7 @@ function ListingCardComponent({ listing, variant = 'grid', priority = false }: L
                         images: listing.images,
                       },
                     ]}
-                    onMarkerClick={(marker) => {
+                    onMarkerClick={() => {
                       window.location.href = listingUrl;
                     }}
                   />

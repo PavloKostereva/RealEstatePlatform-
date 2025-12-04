@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession, signOut, signIn } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { AdminDashboard } from './AdminDashboard';
 import { useToast } from '@/components/ui/ToastContainer';
 

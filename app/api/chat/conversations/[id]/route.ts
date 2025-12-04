@@ -52,10 +52,11 @@ export async function PATCH(
     }
 
     return NextResponse.json(updated);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error updating conversation:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to update conversation', details: error.message },
+      { error: 'Failed to update conversation', details: errorMessage },
       { status: 500 }
     );
   }

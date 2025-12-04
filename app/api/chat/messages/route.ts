@@ -58,8 +58,8 @@ export async function GET(request: NextRequest) {
     // Позначаємо повідомлення як прочитані
     if (messages && messages.length > 0) {
       const unreadIds = messages
-        .filter((m: any) => !m.read && m.sender_id !== session.user.id)
-        .map((m: any) => m.id);
+        .filter((m: { read: boolean; sender_id: string }) => !m.read && m.sender_id !== session.user.id)
+        .map((m: { id: string }) => m.id);
 
       if (unreadIds.length > 0) {
         await supabase
@@ -70,10 +70,11 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(messages || []);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching messages:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to fetch messages', details: error.message },
+      { error: 'Failed to fetch messages', details: errorMessage },
       { status: 500 }
     );
   }
@@ -148,10 +149,11 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(message, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating message:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to create message', details: error.message },
+      { error: 'Failed to create message', details: errorMessage },
       { status: 500 }
     );
   }

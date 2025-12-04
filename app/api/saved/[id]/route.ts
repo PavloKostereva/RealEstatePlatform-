@@ -13,7 +13,7 @@ export async function GET(
     const resolvedParams = params instanceof Promise ? await params : params;
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     });
     if (!session) {
       return NextResponse.json({ saved: false });
@@ -66,7 +66,7 @@ export async function POST(
     const resolvedParams = params instanceof Promise ? await params : params;
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     });
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -168,12 +168,13 @@ export async function POST(
     }
 
     return NextResponse.json(saved);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error saving listing:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
     return NextResponse.json(
       {
         error: 'Failed to save listing',
-        message: error.message || 'An unexpected error occurred',
+        message: errorMessage,
       },
       { status: 500 },
     );
@@ -189,7 +190,7 @@ export async function DELETE(
     const resolvedParams = params instanceof Promise ? await params : params;
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     });
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -233,7 +234,7 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error unsaving listing:', error);
     // Якщо запис не знайдено, це не помилка
     return NextResponse.json({ success: true });

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getSupabaseClient } from '@/lib/supabase';
-import { headers } from 'next/headers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest) {
     // Створюємо об'єкт req для getServerSession
     const req = {
       headers: Object.fromEntries(requestHeaders.entries()),
-    } as any;
+    } as { headers: Record<string, string> };
 
     const session = await getServerSession({
       ...authOptions,
@@ -100,9 +99,9 @@ export async function GET(request: NextRequest) {
 
     // Отримуємо дані owner для всіх listings
     const ownerIds = Array.from(
-      new Set((listings || []).map((l: any) => l.ownerId).filter(Boolean)),
+      new Set((listings || []).map((l: { ownerId?: string }) => l.ownerId).filter(Boolean)),
     );
-    const ownerMap = new Map<string, any>();
+    const ownerMap = new Map<string, { id: string; name?: string | null; email?: string | null }>();
 
     if (ownerIds.length > 0) {
       const userTableNames = ['User', 'user', 'Users', 'users'];
@@ -123,7 +122,7 @@ export async function GET(request: NextRequest) {
           .in('id', ownerIds);
 
         if (owners) {
-          owners.forEach((owner: any) => {
+          owners.forEach((owner: { id: string; name?: string | null; email?: string | null }) => {
             ownerMap.set(owner.id, owner);
           });
         }
@@ -131,7 +130,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Маппінг даних
-    const mappedListings = (listings || []).map((listing: any) => ({
+    const mappedListings = (listings || []).map((listing: { ownerId?: string; [key: string]: unknown }) => ({
       ...listing,
       owner: ownerMap.get(listing.ownerId) || {
         id: listing.ownerId,
@@ -141,10 +140,11 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json(mappedListings);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching listings:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to fetch listings', details: error.message },
+      { error: 'Failed to fetch listings', details: errorMessage },
       { status: 500 },
     );
   }

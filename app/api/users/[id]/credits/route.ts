@@ -16,7 +16,7 @@ export async function GET(
     const headersList = headers();
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     });
 
     if (!session) {
@@ -55,9 +55,10 @@ export async function GET(
       email: user.email,
       name: user.name,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in GET /api/users/[id]/credits:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 
@@ -69,7 +70,7 @@ export async function PUT(
     const headersList = headers();
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     });
 
     if (!session) {
@@ -165,9 +166,10 @@ export async function PUT(
       newCredits: updatedUser.credits || 0,
       action: action || 'set',
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in PUT /api/users/[id]/credits:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
 

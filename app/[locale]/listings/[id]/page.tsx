@@ -56,7 +56,15 @@ async function getListing(id: string) {
     }
 
     // Отримуємо reviews (якщо є таблиця Review)
-    let reviews: any[] = [];
+    let reviews: Array<{
+      id: string;
+      userId: string;
+      listingId: string;
+      rating: number;
+      comment?: string | null;
+      createdAt: string;
+      user?: { id: string; name?: string | null; avatar?: string | null } | null;
+    }> = [];
     const reviewTableNames = ['Review', 'review', 'Reviews', 'reviews'];
     let actualReviewTableName: string | null = null;
 
@@ -76,7 +84,15 @@ async function getListing(id: string) {
         .order('createdAt', { ascending: false });
 
       if (reviewsData) {
-        reviews = reviewsData.map((review: any) => ({
+        reviews = reviewsData.map((review: {
+          id: string;
+          userId: string;
+          listingId: string;
+          rating: number;
+          comment?: string | null;
+          createdAt: string;
+          user?: { id: string; name?: string | null; avatar?: string | null } | null;
+        }) => ({
           ...review,
           user: review.user || {
             id: review.userId,

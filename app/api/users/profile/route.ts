@@ -41,7 +41,13 @@ export async function PUT(request: NextRequest) {
     }
 
     // Створюємо об'єкт для оновлення з базовими полями
-    const updateData: any = {
+    const updateData: {
+      name: string | null;
+      phone: string | null;
+      avatar: string;
+      location?: string | null;
+      bio?: string | null;
+    } = {
       name: name || null,
       phone: phone || null,
       avatar: avatarUrl,
@@ -49,8 +55,8 @@ export async function PUT(request: NextRequest) {
 
     // Спробуємо оновити з location та bio, якщо вони існують в базі
     // Якщо ні - оновимо тільки базові поля
-    let updated: any = null;
-    let error: any = null;
+    let updated: { [key: string]: unknown } | null = null;
+    let error: { message?: string } | null = null;
 
     // Спочатку спробуємо з усіма полями (включаючи location та bio)
     const updateWithOptional = {

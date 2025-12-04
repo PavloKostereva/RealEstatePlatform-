@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const headersList = headers();
     const session = await getServerSession({
       ...authOptions,
-      req: { headers: Object.fromEntries(headersList.entries()) } as any,
+      req: { headers: Object.fromEntries(headersList.entries()) } as { headers: Record<string, string> },
     })
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const listingIds = savedListings.map((sl: any) => sl.listingId);
+    const listingIds = savedListings.map((sl: { listingId: string }) => sl.listingId);
     
     if (actualListingTableName && listingIds.length > 0) {
       const { data: listings } = await supabase
@@ -93,28 +93,28 @@ export async function GET(request: NextRequest) {
       }
 
       if (actualUserTableName && listings) {
-        const ownerIds = [...new Set(listings.map((l: any) => l.ownerId))];
+        const ownerIds = [...new Set(listings.map((l: { ownerId?: string }) => l.ownerId).filter(Boolean) as string[])];
         const { data: owners } = await supabase
           .from(actualUserTableName)
           .select('id, name, email, avatar')
           .in('id', ownerIds);
 
         // Об'єднуємо дані
-        const listingsWithOwners = listings.map((listing: any) => ({
+        const listingsWithOwners = listings.map((listing: { ownerId?: string; id: string; [key: string]: unknown }) => ({
           ...listing,
-          owner: owners?.find((o: any) => o.id === listing.ownerId) || null,
+          owner: owners?.find((o: { id: string }) => o.id === listing.ownerId) || null,
         }));
 
-        const result = savedListings.map((saved: any) => ({
+        const result = savedListings.map((saved: { listingId: string; [key: string]: unknown }) => ({
           ...saved,
-          listing: listingsWithOwners.find((l: any) => l.id === saved.listingId) || null,
+          listing: listingsWithOwners.find((l: { id: string }) => l.id === saved.listingId) || null,
         }));
 
         return NextResponse.json(result);
       }
     }
 
-    return NextResponse.json(savedListings.map((saved: any) => ({
+    return NextResponse.json(savedListings.map((saved: { [key: string]: unknown }) => ({
       ...saved,
       listing: null,
     })))

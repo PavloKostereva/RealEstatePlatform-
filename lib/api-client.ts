@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 // Створюємо базовий axios інстанс з налаштуваннями
 const createApiClient = (): AxiosInstance => {
@@ -46,8 +46,13 @@ export interface ApiResponse<T> {
   success?: boolean;
 }
 
+export interface Listing {
+  id: string;
+  [key: string]: unknown;
+}
+
 export interface ListingsResponse {
-  listings: any[];
+  listings: Listing[];
   page: number;
   pageSize: number;
   total: number;
@@ -56,7 +61,9 @@ export interface ListingsResponse {
 
 // API функції з кешуванням
 export const listingsApi = {
-  getListings: async (params?: Record<string, any>): Promise<ListingsResponse> => {
+  getListings: async (
+    params?: Record<string, string | number | boolean>,
+  ): Promise<ListingsResponse> => {
     const queryParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -71,18 +78,18 @@ export const listingsApi = {
     return data;
   },
 
-  getListing: async (id: string): Promise<any> => {
-    const { data } = await apiClient.get(`/api/listings/${id}`);
+  getListing: async (id: string): Promise<Listing> => {
+    const { data } = await apiClient.get<Listing>(`/api/listings/${id}`);
     return data;
   },
 
-  createListing: async (listing: any): Promise<any> => {
-    const { data } = await apiClient.post('/api/listings', listing);
+  createListing: async (listing: Record<string, unknown>): Promise<Listing> => {
+    const { data } = await apiClient.post<Listing>('/api/listings', listing);
     return data;
   },
 
-  updateListing: async (id: string, listing: any): Promise<any> => {
-    const { data } = await apiClient.put(`/api/listings/${id}`, listing);
+  updateListing: async (id: string, listing: Record<string, unknown>): Promise<Listing> => {
+    const { data } = await apiClient.put<Listing>(`/api/listings/${id}`, listing);
     return data;
   },
 };
@@ -103,12 +110,12 @@ export const savedApi = {
 };
 
 export const adminApi = {
-  getStats: async (): Promise<any> => {
-    const { data } = await apiClient.get('/api/admin/stats');
+  getStats: async (): Promise<Record<string, unknown>> => {
+    const { data } = await apiClient.get<Record<string, unknown>>('/api/admin/stats');
     return data;
   },
 
-  getAdminListings: async (status?: string): Promise<any[]> => {
+  getAdminListings: async (status?: string): Promise<Listing[]> => {
     const params = status ? `?status=${status}` : '?status=all';
     try {
       const response = await apiClient.get(`/api/admin/listings${params}`);
@@ -119,11 +126,15 @@ export const adminApi = {
         length: Array.isArray(response.data) ? response.data.length : 'not array',
       });
       return response.data;
-    } catch (error: any) {
+    } catch (error) {
+      const errorObj = error as {
+        message?: string;
+        response?: { data?: unknown; status?: number };
+      };
       console.error('adminApi.getAdminListings error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
+        message: errorObj.message,
+        response: errorObj.response?.data,
+        status: errorObj.response?.status,
       });
       throw error;
     }

@@ -110,15 +110,21 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(user, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating user:', error);
 
     // Return more detailed error information
-    const errorMessage = error?.message || 'Unknown error';
-    const errorCode = error?.code || 'UNKNOWN';
-    const errorDetails = error?.details || error?.hint || null;
+    const errorObj = error as { message?: string; code?: string; details?: string; hint?: string };
+    const errorMessage = errorObj?.message || 'Unknown error';
+    const errorCode = errorObj?.code || 'UNKNOWN';
+    const errorDetails = errorObj?.details || errorObj?.hint || null;
 
-    const response: any = {
+    const response: {
+      error: string;
+      message: string;
+      code: string;
+      details?: string | null;
+    } = {
       error: 'Failed to create user',
       message: errorMessage,
       code: errorCode,

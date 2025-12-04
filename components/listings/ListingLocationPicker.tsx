@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect, useRef, useState } from 'react';
 
 // Dynamically import Leaflet to avoid SSR issues
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const L = typeof window !== 'undefined' ? require('leaflet') : null;
 
 interface ListingLocationPickerProps {

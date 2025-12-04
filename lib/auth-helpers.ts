@@ -74,9 +74,9 @@ export function canAccessResource(userId: string, resourceOwnerId: string, userR
  * API route wrapper for authentication
  */
 export function withAuth<T>(
-  handler: (req: NextRequest, user: AuthenticatedUser, ...args: any[]) => Promise<NextResponse<T>>,
+  handler: (req: NextRequest, user: AuthenticatedUser, ...args: unknown[]) => Promise<NextResponse<T>>,
 ) {
-  return async (req: NextRequest, ...args: any[]) => {
+  return async (req: NextRequest, ...args: unknown[]) => {
     try {
       const user = await requireAuth();
       return handler(req, user, ...args);
@@ -94,9 +94,9 @@ export function withAuth<T>(
  */
 export function withRole<T>(
   allowedRoles: UserRole[],
-  handler: (req: NextRequest, user: AuthenticatedUser, ...args: any[]) => Promise<NextResponse<T>>,
+  handler: (req: NextRequest, user: AuthenticatedUser, ...args: unknown[]) => Promise<NextResponse<T>>,
 ) {
-  return async (req: NextRequest, ...args: any[]) => {
+  return async (req: NextRequest, ...args: unknown[]) => {
     try {
       const user = await requireRole(allowedRoles);
       return handler(req, user, ...args);
