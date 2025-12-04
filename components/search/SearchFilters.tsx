@@ -43,18 +43,18 @@ export function SearchFilters({ onNearMeClick, useLocalFilters = false }: Search
       setFilters({ query, nearMe, sortBy, size, label });
     } else {
       // Стара логіка з router.push для інших сторінок
-      const params = new URLSearchParams();
-      if (query) params.set('q', query);
-      if (nearMe) params.set('nearMe', 'true');
-      if (sortBy) params.set('sortBy', sortBy);
-      if (size) params.set('size', size);
-      if (label) params.set('label', label);
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (nearMe) params.set('nearMe', 'true');
+    if (sortBy) params.set('sortBy', sortBy);
+    if (size) params.set('size', size);
+    if (label) params.set('label', label);
 
-      const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
-      const targetPath = isHomePage ? `/${locale}` : `/${locale}/listings`;
-      const url = params.toString() ? `${targetPath}?${params.toString()}` : targetPath;
+    const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
+    const targetPath = isHomePage ? `/${locale}` : `/${locale}/listings`;
+    const url = params.toString() ? `${targetPath}?${params.toString()}` : targetPath;
 
-      router.push(url);
+    router.push(url);
     }
   };
 
@@ -67,14 +67,14 @@ export function SearchFilters({ onNearMeClick, useLocalFilters = false }: Search
       setLabel('');
       resetContextFilters();
     } else {
-      setQuery('');
-      setNearMe(false);
-      setSortBy('');
-      setSize('');
-      setLabel('');
-      const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
-      const targetPath = isHomePage ? `/${locale}` : `/${locale}/listings`;
-      router.push(targetPath);
+    setQuery('');
+    setNearMe(false);
+    setSortBy('');
+    setSize('');
+    setLabel('');
+    const isHomePage = pathname === `/${locale}` || pathname === `/${locale}/`;
+    const targetPath = isHomePage ? `/${locale}` : `/${locale}/listings`;
+    router.push(targetPath);
     }
   };
 
@@ -101,11 +101,11 @@ export function SearchFilters({ onNearMeClick, useLocalFilters = false }: Search
         </div>
 
         {!useLocalFilters && (
-          <button
-            onClick={applyFilters}
-            className="h-11 px-5 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 transition">
-            {tCommon('search')}
-          </button>
+        <button
+          onClick={applyFilters}
+          className="h-11 px-5 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 transition">
+          {tCommon('search')}
+        </button>
         )}
 
         <button
@@ -227,7 +227,7 @@ export function SearchFilters({ onNearMeClick, useLocalFilters = false }: Search
               if (useLocalFilters) {
                 setFilters({ sortBy: e.target.value });
               } else {
-                setTimeout(applyFilters, 0);
+              setTimeout(applyFilters, 0);
               }
             }}
             className="h-11 appearance-none bg-surface-secondary border border-subtle rounded-xl px-4 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
@@ -254,7 +254,7 @@ export function SearchFilters({ onNearMeClick, useLocalFilters = false }: Search
               if (useLocalFilters) {
                 setFilters({ size: e.target.value });
               } else {
-                setTimeout(applyFilters, 0);
+              setTimeout(applyFilters, 0);
               }
             }}
             className="h-11 appearance-none bg-surface-secondary border border-subtle rounded-xl px-4 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
@@ -282,7 +282,7 @@ export function SearchFilters({ onNearMeClick, useLocalFilters = false }: Search
               if (useLocalFilters) {
                 setFilters({ label: e.target.value });
               } else {
-                setTimeout(applyFilters, 0);
+              setTimeout(applyFilters, 0);
               }
             }}
             className="h-11 appearance-none bg-surface-secondary border border-subtle rounded-xl px-4 pr-10 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">

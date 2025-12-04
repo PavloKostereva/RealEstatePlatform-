@@ -276,7 +276,7 @@ export function MapView({
 
           // Перевірка готовності карти
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapInstance = map.current as any;
+          const mapInstance = map.current as any;
           if (!mapInstance._loaded || !mapInstance._container || !mapInstance._panes) {
             return;
           }
@@ -402,7 +402,7 @@ export function MapView({
 
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapInstance = map.current as any;
+            const mapInstance = map.current as any;
 
             // Перевірка, що всі необхідні елементи ініціалізовані
             if (
@@ -443,7 +443,7 @@ export function MapView({
                   }
                   return originalPerformZoom.call(this, center, zoom, options);
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
+                } catch (error: any) {
                   // Перевіряємо чи це саме помилка з _leaflet_pos
                   if (
                     error?.message?.includes('_leaflet_pos') ||
@@ -480,7 +480,7 @@ export function MapView({
                     }
                     originalOnWheelScroll.call(this, e);
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (error: any) {
+                  } catch (error: any) {
                     if (
                       error?.message?.includes('_leaflet_pos') ||
                       error?.message?.includes('Cannot read') ||
@@ -1051,7 +1051,7 @@ export function MapView({
                 .on('click', () => {
                   if (!map.current) return;
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mapInstance = map.current as any;
+                  const mapInstance = map.current as any;
                   if (!mapInstance._loaded || !mapInstance._container) return;
 
                   try {

@@ -9,6 +9,7 @@ import { useListings } from '@/hooks/useListings';
 import { ListingGridSkeleton } from '@/components/skeletons/ListingGridSkeleton';
 import { MapSkeleton } from '@/components/skeletons/MapSkeleton';
 import { useFilters } from '@/contexts/FilterContext';
+import { SearchFilters } from '@/components/search/SearchFilters';
 
 // Dynamically import MapView to avoid SSR issues with Leaflet
 const MapView = dynamic(
@@ -315,6 +316,11 @@ export function HomeMapWithListings() {
             userLocation={userLocation}
           />
         </div>
+      </div>
+
+      {/* Фільтри під картою */}
+      <div className="mt-6">
+        <SearchFilters useLocalFilters={true} />
       </div>
 
       {selectedListing && (

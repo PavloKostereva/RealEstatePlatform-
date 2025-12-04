@@ -14,7 +14,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
         <ThemeProvider>
           <FilterProvider>
-            <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>{children}</ToastProvider>
           </FilterProvider>
         </ThemeProvider>
     </SessionProvider>
