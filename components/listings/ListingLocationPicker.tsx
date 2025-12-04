@@ -15,9 +15,11 @@ const DEFAULT_CENTER: [number, number] = [54.5, 15.0];
 const DEFAULT_ZOOM = 4;
 
 // Функція для безпечної перевірки готовності карти
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isMapReady = (map: any): boolean => {
   if (!map) return false;
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mapInstance = map as any;
     if (
       !mapInstance._loaded ||
@@ -36,7 +38,9 @@ const isMapReady = (map: any): boolean => {
 
 export function ListingLocationPicker({ value, onChange }: ListingLocationPickerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerRef = useRef<any>(null);
   const [isMounted, setIsMounted] = useState(false);
   const onChangeRef = useRef(onChange);
@@ -55,6 +59,7 @@ export function ListingLocationPicker({ value, onChange }: ListingLocationPicker
     if (!isMounted || !mapContainerRef.current || mapRef.current || !L) return;
 
     // Налаштування іконок Leaflet (виправляє проблему з відсутністю маркерів)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (L.Icon.Default.prototype as any)._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl:
@@ -83,6 +88,7 @@ export function ListingLocationPicker({ value, onChange }: ListingLocationPicker
     }).addTo(mapRef.current);
 
     // Обробник кліку на карту
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleClick = (event: any) => {
       if (!mapRef.current || !isMapReady(mapRef.current)) return;
 
@@ -96,7 +102,9 @@ export function ListingLocationPicker({ value, onChange }: ListingLocationPicker
           draggable: true,
         })
           .addTo(mapRef.current)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .on('moveend', (e: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const newLatLng = (e.target as any).getLatLng();
             onChangeRef.current({ lat: newLatLng.lat, lng: newLatLng.lng });
           });

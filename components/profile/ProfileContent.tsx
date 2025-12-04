@@ -64,9 +64,29 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   const router = useRouter();
   const locale = useLocale();
   const toast = useToast();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{
+    id: string;
+    email: string;
+    name?: string | null;
+    phone?: string | null;
+    avatar?: string | null;
+    location?: string | null;
+    bio?: string | null;
+    iban?: string | null;
+    role?: string;
+    [key: string]: unknown;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [listings, setListings] = useState<any[]>([]);
+  const [listings, setListings] = useState<
+    Array<{
+      id: string;
+      title: string;
+      price: number;
+      address?: string;
+      status: string;
+      [key: string]: unknown;
+    }>
+  >([]);
   const [listingsLoading, setListingsLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
@@ -130,7 +150,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
         phone: user.phone || '',
         location: user.location || '',
         bio: user.bio || '',
-        iban: (user as any).iban || '',
+        iban: (user as { iban?: string | null }).iban || '',
       });
     }
   }, [user]);
@@ -268,7 +288,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
         phone: user.phone || '',
         location: user.location || '',
         bio: user.bio || '',
-        iban: (user as any).iban || '',
+        iban: (user as { iban?: string | null }).iban || '',
       });
     }
     setEditMode(false);
@@ -314,12 +334,13 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
       }
 
       const updated = await res.json();
-      setUser((prev: any) => ({ ...prev, ...updated }));
+      setUser((prev) => (prev ? { ...prev, ...updated } : updated));
       setEditMode(false);
       toast.success('Profile updated successfully');
-    } catch (error: any) {
+    } catch (error) {
       console.error(error);
-      toast.error(error.message || 'Failed to update profile');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
+      toast.error(errorMessage);
     } finally {
       setSavingProfile(false);
     }
@@ -344,9 +365,10 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
     );
   }
 
-  const accountAgeDays = user.createdAt
-    ? differenceInDays(new Date(), new Date(user.createdAt))
-    : 0;
+  const accountAgeDays =
+    user.createdAt && typeof user.createdAt === 'string'
+      ? differenceInDays(new Date(), new Date(user.createdAt))
+      : 0;
   const profileFields = [user.name, user.email, user.phone, user.role];
   const profileCompletion = Math.round(
     (profileFields.filter(Boolean).length / profileFields.length) * 100,
@@ -374,7 +396,9 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
 
     // Фільтруємо listings, створені в цьому періоді
     const periodListings = publishedListings.filter((listing) => {
-      const listingDate = new Date(listing.createdAt || listing.updatedAt);
+      const dateStr = (listing.createdAt || listing.updatedAt) as string | undefined;
+      if (!dateStr || typeof dateStr !== 'string') return false;
+      const listingDate = new Date(dateStr);
       return listingDate >= startDate;
     });
 
@@ -414,7 +438,9 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
 
       const monthListings = publishedListings.filter((listing) => {
-        const listingDate = new Date(listing.createdAt || listing.updatedAt);
+        const dateStr = (listing.createdAt || listing.updatedAt) as string | undefined;
+        if (!dateStr || typeof dateStr !== 'string') return false;
+        const listingDate = new Date(dateStr);
         return listingDate >= monthStart && listingDate <= monthEnd;
       });
 
@@ -437,7 +463,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
 
   const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: publishedListings[0]?.currency || 'EUR',
+    currency: (publishedListings[0]?.currency as string | undefined) || 'EUR',
   });
   const affiliateCode =
     (user.id || 'REAL-USER')
@@ -682,7 +708,9 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
               <p className="text-sm text-white/80">Account Age (days)</p>
               <p className="mt-3 text-4xl font-semibold">{accountAgeDays}</p>
               <p className="mt-2 text-xs text-white/70">
-                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'}
+                {user.createdAt && typeof user.createdAt === 'string'
+                  ? new Date(user.createdAt).toLocaleDateString()
+                  : '-'}
               </p>
             </div>
           </div>
@@ -860,8 +888,10 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                           <div>
                             <p className="font-medium text-foreground">{item.title || 'Listing'}</p>
                             <p className="text-xs text-muted-foreground">
-                              {item.createdAt ? new Date(item.createdAt).toLocaleString() : '--'} ·
-                              #{item.id.slice(0, 10).toUpperCase()}
+                              {item.createdAt && typeof item.createdAt === 'string'
+                                ? new Date(item.createdAt).toLocaleString()
+                                : '--'}{' '}
+                              · #{item.id.slice(0, 10).toUpperCase()}
                             </p>
                           </div>
                           <button
@@ -1093,7 +1123,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                                   </Link>
                                 </td>
                                 <td className="py-3 capitalize text-muted-foreground">
-                                  {item.type || 'private'}
+                                  {(item.type as string | undefined) || 'private'}
                                 </td>
                                 <td className="py-3 text-muted-foreground">
                                   {item.price

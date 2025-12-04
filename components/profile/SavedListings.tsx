@@ -16,7 +16,7 @@ export function SavedListings({ userId }: SavedListingsProps) {
     queryKey: ['saved', 'list', userId],
     queryFn: async () => {
       const { data } = await apiClient.get(`/api/saved?userId=${userId}`)
-      return data.map((item: any) => item.listing)
+      return data.map((item: { listing: Record<string, unknown> }) => item.listing)
     },
     enabled: !!userId,
     staleTime: 1 * 60 * 1000, // 1 хвилина

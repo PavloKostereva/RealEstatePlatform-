@@ -4,9 +4,23 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 
+interface Review {
+  id: string;
+  userId: string;
+  listingId: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  user?: {
+    id: string;
+    name?: string | null;
+    avatar?: string | null;
+  } | null;
+}
+
 interface ReviewsSectionProps {
   listingId: string
-  reviews: any[]
+  reviews: Review[]
 }
 
 export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSectionProps) {

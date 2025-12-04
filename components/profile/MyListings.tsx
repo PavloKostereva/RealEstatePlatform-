@@ -9,7 +9,14 @@ interface MyListingsProps {
 }
 
 export function MyListings({ userId }: MyListingsProps) {
-  const [listings, setListings] = useState<any[]>([])
+  const [listings, setListings] = useState<Array<{
+    id: string;
+    title: string;
+    price: number;
+    address: string;
+    status: string;
+    [key: string]: unknown;
+  }>>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

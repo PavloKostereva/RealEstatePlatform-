@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import Supercluster from 'supercluster';
-import { useTranslations } from 'next-intl';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -82,6 +82,7 @@ export function MapView({
     return (): boolean => {
       if (!map.current) return false;
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapInstance = map.current as any;
         if (
           !mapInstance._loaded ||
@@ -137,6 +138,7 @@ export function MapView({
             return null;
           }
           return originalContainerPointToLatLng.call(this, point);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           if (
             error?.message?.includes('_leaflet_pos') ||
@@ -154,6 +156,7 @@ export function MapView({
     // Обгорнути setZoomAround
     if (mapInstance.setZoomAround && !mapInstance.setZoomAround._wrapped) {
       const originalSetZoomAround = mapInstance.setZoomAround.bind(mapInstance);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mapInstance.setZoomAround = function (latlng: any, zoom: number, options?: any) {
         try {
           if (!this._loaded || !this._container || !this._mapPane) {
@@ -164,6 +167,7 @@ export function MapView({
             return this;
           }
           return originalSetZoomAround.call(this, latlng, zoom, options);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           if (
             error?.message?.includes('_leaflet_pos') ||
@@ -208,6 +212,7 @@ export function MapView({
             return null;
           }
           return originalGetMapPanePos.call(this);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           if (
             error?.message?.includes('_leaflet_pos') ||
@@ -226,12 +231,14 @@ export function MapView({
     // Обгорнути getPosition для безпечної обробки
     if (mapInstance.getPosition && !mapInstance.getPosition._wrapped) {
       const originalGetPosition = mapInstance.getPosition.bind(mapInstance);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mapInstance.getPosition = function (element: any) {
         try {
           if (!element || !element._leaflet_pos) {
             return null;
           }
           return originalGetPosition.call(this, element);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           if (
             error?.message?.includes('_leaflet_pos') ||
@@ -266,7 +273,8 @@ export function MapView({
           if (!mapContainer.current || !map.current) return;
 
           // Перевірка готовності карти
-          const mapInstance = map.current as any;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapInstance = map.current as any;
           if (!mapInstance._loaded || !mapInstance._container || !mapInstance._panes) {
             return;
           }
@@ -275,11 +283,17 @@ export function MapView({
             // Увімкнути fullscreen
             if (mapContainer.current.requestFullscreen) {
               mapContainer.current.requestFullscreen();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } else if ((mapContainer.current as any).webkitRequestFullscreen) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (mapContainer.current as any).webkitRequestFullscreen();
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } else if ((mapContainer.current as any).mozRequestFullScreen) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (mapContainer.current as any).mozRequestFullScreen();
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } else if ((mapContainer.current as any).msRequestFullscreen) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (mapContainer.current as any).msRequestFullscreen();
             }
             fullscreenRef.current = true;
@@ -287,11 +301,17 @@ export function MapView({
             // Вимкнути fullscreen
             if (document.exitFullscreen) {
               document.exitFullscreen();
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } else if ((document as any).webkitExitFullscreen) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (document as any).webkitExitFullscreen();
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } else if ((document as any).mozCancelFullScreen) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (document as any).mozCancelFullScreen();
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } else if ((document as any).msExitFullscreen) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (document as any).msExitFullscreen();
             }
             fullscreenRef.current = false;
@@ -324,6 +344,7 @@ export function MapView({
       if (!map.current) return;
 
       try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapInstance = map.current as any;
         if (!mapInstance._loaded || !mapInstance._container || !mapInstance._panes) {
           return;
@@ -378,7 +399,8 @@ export function MapView({
           if (!map.current) return false;
 
           try {
-            const mapInstance = map.current as any;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapInstance = map.current as any;
 
             // Перевірка, що всі необхідні елементи ініціалізовані
             if (
@@ -405,6 +427,7 @@ export function MapView({
             // Дозволяємо карті працювати нормально, але обробляємо помилки
             if (mapInstance._performZoom && !mapInstance._performZoom._wrapped) {
               const originalPerformZoom = mapInstance._performZoom.bind(mapInstance);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               mapInstance._performZoom = function (center: any, zoom: number, options?: any) {
                 // Перевіряємо готовність карти перед викликом
                 try {
@@ -417,7 +440,8 @@ export function MapView({
                     return;
                   }
                   return originalPerformZoom.call(this, center, zoom, options);
-                } catch (error: any) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
                   // Перевіряємо чи це саме помилка з _leaflet_pos
                   if (
                     error?.message?.includes('_leaflet_pos') ||
@@ -434,6 +458,7 @@ export function MapView({
             }
 
             // Обгорнути scrollWheelZoom handler для безпечної обробки
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const scrollWheelZoomHandler = map.current.scrollWheelZoom as any;
             if (scrollWheelZoomHandler && !scrollWheelZoomHandler._safeEnabled) {
               // Перехопити метод _onWheelScroll якщо він існує
@@ -442,6 +467,7 @@ export function MapView({
                   scrollWheelZoomHandler._onWheelScroll.bind(scrollWheelZoomHandler);
                 scrollWheelZoomHandler._onWheelScroll = function (e: WheelEvent) {
                   try {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const mapInst = this._map as any;
                     if (!mapInst || !mapInst._loaded || !mapInst._container || !mapInst._mapPane) {
                       return;
@@ -451,7 +477,8 @@ export function MapView({
                       return;
                     }
                     originalOnWheelScroll.call(this, e);
-                  } catch (error: any) {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (error: any) {
                     if (
                       error?.message?.includes('_leaflet_pos') ||
                       error?.message?.includes('Cannot read') ||
@@ -516,6 +543,7 @@ export function MapView({
 
       try {
         // Перевіряємо, що карта повністю готова
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapInstance = map.current as any;
         if (!mapInstance._loaded || !mapInstance._container || !mapInstance._panes) {
           setTimeout(() => {
@@ -540,8 +568,11 @@ export function MapView({
     const handleFullscreenChange = () => {
       const isFullscreen = !!(
         document.fullscreenElement ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (document as any).webkitFullscreenElement ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (document as any).mozFullScreenElement ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (document as any).msFullscreenElement
       );
       fullscreenRef.current = isFullscreen;
@@ -630,6 +661,7 @@ export function MapView({
 
       try {
         // Ensure map is fully initialized before accessing zoom
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mapInstance = map.current as any;
         if (!mapInstance._loaded || !mapInstance._container || !mapInstance._mapPane) return;
 
@@ -687,7 +719,7 @@ export function MapView({
         if (marker && map.current) {
           try {
             map.current.removeLayer(marker);
-          } catch (error) {
+          } catch {
             // Ігноруємо помилки під час cleanup
           }
         }
@@ -843,6 +875,7 @@ export function MapView({
         userLocationMarkerRef.current = userMarker;
 
         // Реєструємо функцію для fitBounds з HomeMapWithListings
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).fitMapBounds = (bounds: [[number, number], [number, number]]) => {
           if (map.current && isMapReady()) {
             try {
@@ -867,13 +900,15 @@ export function MapView({
       if (userLocationMarkerRef.current && map.current) {
         try {
           map.current.removeLayer(userLocationMarkerRef.current);
-        } catch (error) {
+        } catch {
           // Ігноруємо помилки при видаленні
         }
         userLocationMarkerRef.current = null;
       }
       // Очищаємо глобальну функцію при unmount (якщо userLocation стає undefined)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (!userLocation && (window as any).fitMapBounds) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         delete (window as any).fitMapBounds;
       }
     };
@@ -907,7 +942,7 @@ export function MapView({
         if (marker && map.current) {
           try {
             map.current.removeLayer(marker);
-          } catch (error) {
+          } catch {
             // Ignore errors when removing markers
           }
         }
@@ -979,9 +1014,11 @@ export function MapView({
             // Використовуємо maxZoom + 1, щоб отримати тільки індивідуальні точки
             clusters = cluster.getClusters(bbox, 20); // Високий рівень зуму для отримання індивідуальних точок
             // Фільтруємо тільки не-кластеризовані точки
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             clusters = clusters.filter((c: any) => !c.properties.cluster);
           }
 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           clusters.forEach((clusterPoint: any) => {
             const [lng, lat] = clusterPoint.geometry.coordinates;
 
@@ -1009,7 +1046,8 @@ export function MapView({
                 .addTo(map.current!)
                 .on('click', () => {
                   if (!map.current) return;
-                  const mapInstance = map.current as any;
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mapInstance = map.current as any;
                   if (!mapInstance._loaded || !mapInstance._container) return;
 
                   try {

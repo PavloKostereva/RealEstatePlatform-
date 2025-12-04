@@ -8,7 +8,15 @@ interface MessagesListProps {
 }
 
 export function MessagesList({ userId }: MessagesListProps) {
-  const [messages, setMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<Array<{
+    id: string;
+    content: string;
+    sender_id: string;
+    conversation_id: string;
+    created_at: string;
+    read: boolean;
+    [key: string]: unknown;
+  }>>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

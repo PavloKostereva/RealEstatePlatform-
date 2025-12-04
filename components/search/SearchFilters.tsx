@@ -69,7 +69,7 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
         <button
           onClick={async () => {
             // Перевіряємо чи є глобальний callback для карти (з HomeMapWithListings)
-            if (typeof window !== 'undefined' && (window as any).handleNearMeMap) {
+            if (typeof window !== 'undefined' && (window as { handleNearMeMap?: (lat: number, lng: number) => void }).handleNearMeMap) {
               // Використовуємо геолокацію для карти
               setGettingLocation(true);
               try {
@@ -78,7 +78,7 @@ export function SearchFilters({ onNearMeClick }: SearchFiltersProps) {
                     (position) => {
                       const { latitude, longitude } = position.coords;
                       setNearMe(true);
-                      (window as any).handleNearMeMap(latitude, longitude);
+                      (window as { handleNearMeMap: (lat: number, lng: number) => void }).handleNearMeMap(latitude, longitude);
                       setGettingLocation(false);
                     },
                     (error: GeolocationPositionError) => {
