@@ -228,7 +228,16 @@ export function ListingDetails({ listing }: ListingDetailsProps) {
             </div>
           )}
 
-          {listing.reviews && <ReviewsSection listingId={listing.id} reviews={listing.reviews} />}
+          {listing.reviews && (
+            <ReviewsSection
+              listingId={listing.id}
+              reviews={listing.reviews.map((review) => ({
+                ...review,
+                userId: review.user.id,
+                listingId: listing.id,
+              }))}
+            />
+          )}
         </div>
 
         <div className="lg:col-span-1">
