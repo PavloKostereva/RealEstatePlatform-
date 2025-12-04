@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useSession } from 'next-auth/react'
-import Image from 'next/image'
+import { useState } from 'react';
+import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 
 interface Review {
   id: string;
@@ -19,23 +19,23 @@ interface Review {
 }
 
 interface ReviewsSectionProps {
-  listingId: string
-  reviews: Review[]
+  listingId: string;
+  reviews: Review[];
 }
 
 export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSectionProps) {
-  const { data: session } = useSession()
-  const [reviews, setReviews] = useState(initialReviews)
-  const [rating, setRating] = useState(5)
-  const [comment, setComment] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [showForm, setShowForm] = useState(false)
+  const { data: session } = useSession();
+  const [reviews, setReviews] = useState(initialReviews);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!session) return
+    e.preventDefault();
+    if (!session) return;
 
-    setLoading(true)
+    setLoading(true);
     try {
       const res = await fetch('/api/reviews', {
         method: 'POST',
@@ -45,25 +45,23 @@ export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSe
           rating,
           comment,
         }),
-      })
+      });
 
       if (res.ok) {
-        const newReview = await res.json()
-        setReviews([newReview, ...reviews])
-        setComment('')
-        setShowForm(false)
+        const newReview = await res.json();
+        setReviews([newReview, ...reviews]);
+        setComment('');
+        setShowForm(false);
       }
     } catch (error) {
-      console.error('Error submitting review:', error)
+      console.error('Error submitting review:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const avgRating =
-    reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-      : 0
+    reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -76,10 +74,7 @@ export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSe
               {[1, 2, 3, 4, 5].map((star) => (
                 <span
                   key={star}
-                  className={`text-xl ${
-                    star <= avgRating ? 'text-yellow-400' : 'text-gray-300'
-                  }`}
-                >
+                  className={`text-xl ${star <= avgRating ? 'text-yellow-400' : 'text-gray-300'}`}>
                   ★
                 </span>
               ))}
@@ -90,8 +85,7 @@ export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSe
         {session && (
           <button
             onClick={() => setShowForm(!showForm)}
-            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition"
-          >
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition">
             {showForm ? 'Скасувати' : 'Додати відгук'}
           </button>
         )}
@@ -107,10 +101,7 @@ export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSe
                   key={star}
                   type="button"
                   onClick={() => setRating(star)}
-                  className={`text-2xl ${
-                    star <= rating ? 'text-yellow-400' : 'text-gray-300'
-                  }`}
-                >
+                  className={`text-2xl ${star <= rating ? 'text-yellow-400' : 'text-gray-300'}`}>
                   ★
                 </button>
               ))}
@@ -128,8 +119,7 @@ export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSe
           <button
             type="submit"
             disabled={loading}
-            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
-          >
+            className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition">
             {loading ? 'Відправка...' : 'Опублікувати'}
           </button>
         </form>
@@ -142,11 +132,11 @@ export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSe
           reviews.map((review) => (
             <div key={review.id} className="border-t pt-4">
               <div className="flex items-start gap-4">
-                {review.user.avatar && (
+                {review.user?.avatar && (
                   <div className="relative w-12 h-12 rounded-full overflow-hidden">
                     <Image
                       src={review.user.avatar}
-                      alt={review.user.name || 'User'}
+                      alt={review.user?.name || 'User'}
                       fill
                       className="object-cover"
                       sizes="48px"
@@ -155,19 +145,14 @@ export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSe
                 )}
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold">
-                      {review.user.name || 'Анонім'}
-                    </span>
+                    <span className="font-semibold">{review.user?.name || 'Анонім'}</span>
                     <div className="flex">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <span
                           key={star}
                           className={`text-sm ${
-                            star <= review.rating
-                              ? 'text-yellow-400'
-                              : 'text-gray-300'
-                          }`}
-                        >
+                            star <= review.rating ? 'text-yellow-400' : 'text-gray-300'
+                          }`}>
                           ★
                         </span>
                       ))}
@@ -176,9 +161,7 @@ export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSe
                       {new Date(review.createdAt).toLocaleDateString('uk-UA')}
                     </span>
                   </div>
-                  {review.comment && (
-                    <p className="text-gray-700">{review.comment}</p>
-                  )}
+                  {review.comment && <p className="text-gray-700">{review.comment}</p>}
                 </div>
               </div>
             </div>
@@ -186,11 +169,5 @@ export function ReviewsSection({ listingId, reviews: initialReviews }: ReviewsSe
         )}
       </div>
     </div>
-  )
+  );
 }
-
-
-
-
-
-
