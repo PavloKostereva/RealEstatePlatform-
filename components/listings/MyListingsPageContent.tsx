@@ -64,6 +64,29 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
     longitude: '-122.4194',
   });
   const [showMoreFeatures, setShowMoreFeatures] = useState(false);
+  const [editingListingId, setEditingListingId] = useState<string | null>(null);
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [editingImages, setEditingImages] = useState<string[]>([]);
+  const [editingImageFiles, setEditingImageFiles] = useState<File[]>([]);
+  const [editingFormData, setEditingFormData] = useState({
+    title: '',
+    subtitle: '',
+    price: '',
+    size: '',
+    features: [] as string[],
+    address: '',
+    latitude: '',
+    longitude: '',
+  });
+  const [editingLocation, setEditingLocation] = useState<{
+    lat: number | null;
+    lng: number | null;
+  }>({
+    lat: null,
+    lng: null,
+  });
+  const [editingShowMoreFeatures, setEditingShowMoreFeatures] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const fetchListings = useCallback(async () => {
     if (!userId) {
@@ -298,6 +321,171 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
       }
     } catch (error) {
       console.error('Error deleting listing:', error);
+    }
+  };
+
+  const handleEditImage = (listing: Listing) => {
+    setEditingListingId(listing.id);
+    setEditingListing(listing);
+    setEditingImages(listing.images || []);
+    setEditingImageFiles([]);
+    setEditingFormData({
+      title: listing.title || '',
+      subtitle: listing.description || '',
+      price: listing.price?.toString() || '',
+      size: listing.area?.toString() || '',
+      features: listing.amenities || [],
+      address: listing.address || '',
+      latitude: listing.latitude?.toString() || '',
+      longitude: listing.longitude?.toString() || '',
+    });
+    setEditingLocation({
+      lat: listing.latitude || null,
+      lng: listing.longitude || null,
+    });
+    setEditingShowMoreFeatures(false);
+  };
+
+  const handleEditingImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newFiles = [...editingImageFiles, ...files].slice(0, 10 - editingImages.length);
+    setEditingImageFiles([...editingImageFiles, ...newFiles]);
+
+    newFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditingImages((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeEditingImage = (index: number) => {
+    if (editingImages.length > 0 && index < editingImages.length) {
+      setEditingImages(editingImages.filter((_, i) => i !== index));
+      const newIndex = index - (editingImages.length - editingImageFiles.length);
+      if (newIndex >= 0 && newIndex < editingImageFiles.length) {
+        setEditingImageFiles(editingImageFiles.filter((_, i) => i !== newIndex));
+      }
+    }
+  };
+
+  const toggleEditingFeature = (feature: string) => {
+    setEditingFormData((prev) => ({
+      ...prev,
+      features: prev.features.includes(feature)
+        ? prev.features.filter((f) => f !== feature)
+        : [...prev.features, feature],
+    }));
+  };
+
+  const handleEditingLocationChange = async (coords: { lat: number; lng: number }) => {
+    setEditingLocation(coords);
+    setEditingFormData((prev) => ({
+      ...prev,
+      latitude: coords.lat.toString(),
+      longitude: coords.lng.toString(),
+    }));
+
+    // Отримуємо адресу за координатами
+    const address = await getAddressFromCoordinates(coords.lat, coords.lng);
+    if (address) {
+      setEditingFormData((prev) => ({
+        ...prev,
+        address: address,
+      }));
+    }
+  };
+
+  const handleSaveListing = async () => {
+    if (!editingListingId) return;
+
+    setUploadingImages(true);
+
+    try {
+      // Upload new images
+      const uploadedImages: string[] = [];
+      if (editingImageFiles.length > 0) {
+        const imageFormData = new FormData();
+        editingImageFiles.forEach((file) => {
+          imageFormData.append('images', file);
+        });
+
+        const imageRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: imageFormData,
+        });
+
+        if (imageRes.ok) {
+          const imageData = await imageRes.json();
+          uploadedImages.push(...imageData.urls);
+        }
+      }
+
+      // Combine existing and new images
+      const existingImages = editingImages.filter((img) => !img.startsWith('data:'));
+      const allImages = [...existingImages, ...uploadedImages];
+
+      // Prepare update data
+      const updateData: any = {
+        title: editingFormData.title,
+        description: editingFormData.subtitle,
+        price: parseFloat(editingFormData.price) || 0,
+        area: editingFormData.size ? parseFloat(editingFormData.size) : null,
+        amenities: editingFormData.features || [],
+        images: allImages || [],
+        address: editingFormData.address,
+      };
+
+      // Додаємо координати тільки якщо вони є
+      if (editingFormData.latitude && editingFormData.latitude.trim() !== '') {
+        updateData.latitude = parseFloat(editingFormData.latitude);
+      } else {
+        updateData.latitude = null;
+      }
+
+      if (editingFormData.longitude && editingFormData.longitude.trim() !== '') {
+        updateData.longitude = parseFloat(editingFormData.longitude);
+      } else {
+        updateData.longitude = null;
+      }
+
+      // Update listing
+      const res = await fetch(`/api/listings/${editingListingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      });
+
+      if (res.ok) {
+        alert('Оголошення оновлено успішно!');
+        setEditingListingId(null);
+        setEditingListing(null);
+        setEditingImages([]);
+        setEditingImageFiles([]);
+        setEditingFormData({
+          title: '',
+          subtitle: '',
+          price: '',
+          size: '',
+          features: [],
+          address: '',
+          latitude: '',
+          longitude: '',
+        });
+        setEditingLocation({ lat: null, lng: null });
+        fetchListings();
+      } else {
+        const error = await res.json();
+        alert(error.error || 'Помилка при оновленні оголошення');
+      }
+    } catch (error) {
+      console.error('Error updating listing:', error);
+      alert('Помилка при оновленні оголошення');
+    } finally {
+      setUploadingImages(false);
     }
   };
 
@@ -715,7 +903,9 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
                         />
                       </svg>
                     </button>
-                    <button className="px-3 py-1 rounded-lg bg-surface border border-subtle hover:border-primary-400 transition text-xs">
+                    <button
+                      onClick={() => handleEditImage(listing)}
+                      className="px-3 py-1 rounded-lg bg-surface border border-subtle hover:border-primary-400 transition text-xs">
                       Edit image
                     </button>
                   </div>
@@ -725,6 +915,319 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
           </div>
         )}
       </div>
+
+      {/* Edit Listing Modal */}
+      {editingListingId && editingListing && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          onClick={() => {
+            setEditingListingId(null);
+            setEditingListing(null);
+            setEditingImages([]);
+            setEditingImageFiles([]);
+            setEditingFormData({
+              title: '',
+              subtitle: '',
+              price: '',
+              size: '',
+              features: [],
+              address: '',
+              latitude: '',
+              longitude: '',
+            });
+            setEditingLocation({ lat: null, lng: null });
+          }}>
+          <div
+            className="bg-surface rounded-2xl border border-subtle p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-foreground">Редагувати оголошення</h3>
+              <button
+                onClick={() => {
+                  setEditingListingId(null);
+                  setEditingListing(null);
+                  setEditingImages([]);
+                  setEditingImageFiles([]);
+                  setEditingFormData({
+                    title: '',
+                    subtitle: '',
+                    price: '',
+                    size: '',
+                    features: [],
+                    address: '',
+                    latitude: '',
+                    longitude: '',
+                  });
+                  setEditingLocation({ lat: null, lng: null });
+                }}
+                className="w-8 h-8 rounded-lg bg-surface-secondary hover:bg-subtle flex items-center justify-center text-foreground transition">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">Title</label>
+                <input
+                  type="text"
+                  required
+                  value={editingFormData.title}
+                  onChange={(e) =>
+                    setEditingFormData({ ...editingFormData, title: e.target.value })
+                  }
+                  placeholder="Enter listing title"
+                  className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              {/* Subtitle */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">Subtitle</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={editingFormData.subtitle}
+                  onChange={(e) =>
+                    setEditingFormData({ ...editingFormData, subtitle: e.target.value })
+                  }
+                  placeholder="Enter listing description"
+                  className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              {/* Price and Size */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">
+                    Monthly price (EUR)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={editingFormData.price}
+                    onChange={(e) =>
+                      setEditingFormData({ ...editingFormData, price: e.target.value })
+                    }
+                    placeholder="0"
+                    className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">
+                    Size (m²)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={editingFormData.size}
+                    onChange={(e) =>
+                      setEditingFormData({ ...editingFormData, size: e.target.value })
+                    }
+                    placeholder="0"
+                    className="w-full px-4 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              {/* Features */}
+              <div>
+                <label className="block text-sm font-medium mb-3 text-foreground">Features</label>
+                <div className="flex flex-wrap gap-2">
+                  {(editingShowMoreFeatures ? featuresOptions : featuresOptions.slice(0, 6)).map(
+                    (feature) => (
+                      <button
+                        key={feature}
+                        type="button"
+                        onClick={() => toggleEditingFeature(feature)}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+                          editingFormData.features.includes(feature)
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-surface-secondary text-muted-foreground border border-subtle hover:border-primary-400'
+                        }`}>
+                        {feature}
+                      </button>
+                    ),
+                  )}
+                  {!editingShowMoreFeatures && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingShowMoreFeatures(true)}
+                      className="px-4 py-2 rounded-xl text-sm font-medium bg-surface-secondary text-muted-foreground border border-subtle hover:border-primary-400 flex items-center gap-1">
+                      See more <span className="text-xs">▼</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Current Images */}
+              {editingImages.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium mb-3 text-foreground">
+                    Поточні зображення
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {editingImages.map((img, idx) => (
+                      <div
+                        key={idx}
+                        className="relative rounded-lg overflow-hidden border border-subtle">
+                        <div className="relative h-32 w-full">
+                          <Image
+                            src={img}
+                            alt={`Image ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 33vw, 150px"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeEditingImage(idx)}
+                          className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/70 text-white text-xs flex items-center justify-center hover:bg-black/90 transition">
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Upload New Images */}
+              <div>
+                <label className="block text-sm font-medium mb-3 text-foreground">
+                  Додати нові зображення
+                </label>
+                <label className="px-4 py-2 rounded-xl bg-surface-secondary border border-subtle hover:border-primary-400 cursor-pointer inline-flex items-center gap-2 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  Завантажити фото
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleEditingImageChange}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {editingImages.length}/10 фото (макс 25MB кожне)
+                </p>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm font-medium mb-3 text-foreground">Location</label>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1">Latitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={editingFormData.latitude}
+                        onChange={(e) => {
+                          setEditingFormData({ ...editingFormData, latitude: e.target.value });
+                          if (e.target.value) {
+                            setEditingLocation({
+                              lat: parseFloat(e.target.value),
+                              lng: editingLocation.lng,
+                            });
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1">Longitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={editingFormData.longitude}
+                        onChange={(e) => {
+                          setEditingFormData({ ...editingFormData, longitude: e.target.value });
+                          if (e.target.value) {
+                            setEditingLocation({
+                              lat: editingLocation.lat,
+                              lng: parseFloat(e.target.value),
+                            });
+                          }
+                        }}
+                        className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1">Address</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingFormData.address}
+                      onChange={(e) =>
+                        setEditingFormData({ ...editingFormData, address: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                    />
+                  </div>
+                  {editingLocation.lat && editingLocation.lng && (
+                    <div className="mt-3">
+                      <ListingLocationPicker
+                        value={editingLocation}
+                        onChange={handleEditingLocationChange}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t border-subtle">
+                <button
+                  onClick={handleSaveListing}
+                  disabled={uploadingImages}
+                  className="flex-1 px-6 py-3 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition">
+                  {uploadingImages ? 'Збереження...' : 'Зберегти зміни'}
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingListingId(null);
+                    setEditingListing(null);
+                    setEditingImages([]);
+                    setEditingImageFiles([]);
+                    setEditingFormData({
+                      title: '',
+                      subtitle: '',
+                      price: '',
+                      size: '',
+                      features: [],
+                      address: '',
+                      latitude: '',
+                      longitude: '',
+                    });
+                    setEditingLocation({ lat: null, lng: null });
+                  }}
+                  className="px-6 py-3 rounded-xl bg-surface-secondary border border-subtle hover:border-primary-400 text-foreground font-semibold transition">
+                  Скасувати
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
