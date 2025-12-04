@@ -52,9 +52,16 @@ export default async function EditListingPage({
     redirect(`/${locale}/listings`)
   }
 
+  // Конвертуємо Date в string для availableFrom та availableTo
+  const listingForForm = {
+    ...listing,
+    availableFrom: listing.availableFrom ? listing.availableFrom.toISOString().split('T')[0] : null,
+    availableTo: listing.availableTo ? listing.availableTo.toISOString().split('T')[0] : null,
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <EditListingForm listing={listing} />
+      <EditListingForm listing={listingForForm} />
     </div>
   )
 }
