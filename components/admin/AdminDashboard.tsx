@@ -123,7 +123,7 @@ export function AdminDashboard() {
 
   // Синхронізуємо дані з React Query
   useEffect(() => {
-    if (statsData) setStats(statsData);
+    if (statsData) setStats(statsData as unknown as StatsData);
   }, [statsData]);
 
   // Завантажуємо IBAN submissions
@@ -167,7 +167,7 @@ export function AdminDashboard() {
       console.error('Error loading listings:', allListingsErrorDetails);
       setAllListings([]);
     } else if (allListingsData && Array.isArray(allListingsData)) {
-      setAllListings(allListingsData);
+      setAllListings(allListingsData as unknown as Listing[]);
     } else if (!allListingsLoading && (allListingsData === null || allListingsData === undefined)) {
       setAllListings([]);
     }
@@ -175,7 +175,7 @@ export function AdminDashboard() {
 
   useEffect(() => {
     if (pendingListingsData && Array.isArray(pendingListingsData)) {
-      setPendingListings(pendingListingsData);
+      setPendingListings(pendingListingsData as unknown as Listing[]);
     } else if (pendingListingsData === null || pendingListingsData === undefined) {
       setPendingListings([]);
     }
