@@ -297,6 +297,45 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   const handleSaveProfile = async () => {
     try {
       setSavingProfile(true);
+
+      if (!user) {
+        toast.error('User data not available');
+        setSavingProfile(false);
+        return;
+      }
+
+      const validationErrors: string[] = [];
+
+      if (user.name && user.name.trim() !== '' && (!editData.name || editData.name.trim() === '')) {
+        validationErrors.push('Full name cannot be empty');
+      }
+      if (
+        user.phone &&
+        user.phone.trim() !== '' &&
+        (!editData.phone || editData.phone.trim() === '')
+      ) {
+        validationErrors.push('Phone cannot be empty');
+      }
+      if (
+        user.location &&
+        user.location.trim() !== '' &&
+        (!editData.location || editData.location.trim() === '')
+      ) {
+        validationErrors.push('Location cannot be empty');
+      }
+      if (user.bio && user.bio.trim() !== '' && (!editData.bio || editData.bio.trim() === '')) {
+        validationErrors.push('About you cannot be empty');
+      }
+
+      if (validationErrors.length > 0) {
+        toast.error(
+          validationErrors.join('. ') +
+            '. Please fill in the fields or replace them with new values.',
+        );
+        setSavingProfile(false);
+        return;
+      }
+
       const formData = new FormData();
       formData.append('name', editData.name);
       formData.append('phone', editData.phone);
@@ -369,10 +408,11 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
     user.createdAt && typeof user.createdAt === 'string'
       ? differenceInDays(new Date(), new Date(user.createdAt))
       : 0;
-  const profileFields = [user.name, user.email, user.phone, user.role];
-  const profileCompletion = Math.round(
-    (profileFields.filter(Boolean).length / profileFields.length) * 100,
-  );
+
+  const personalInfoFields = [user.name, user.email, user.phone, user.location, user.bio];
+  const filledFields = personalInfoFields.filter((field) => field && field.trim() !== '').length;
+  const totalFields = personalInfoFields.length;
+  const profileCompletion = Math.round((filledFields / totalFields) * 100);
   // Розрахунок заробітків на основі опублікованих listings
   const publishedListings = listings.filter((l) => l.status === 'PUBLISHED');
 
@@ -760,21 +800,23 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             </div>
           </div>
 
-          {/* Profile Completeness */}
-          <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-foreground">Profile Completeness</h3>
+          {/* Profile Completeness - Показується тільки якщо профіль не заповнений на 100% */}
+          {profileCompletion < 100 && (
+            <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-foreground">Profile Completeness</h3>
+              </div>
+              <div className="h-2 rounded-full bg-surface-secondary overflow-hidden">
+                <div
+                  className="h-full bg-primary-600 transition-all duration-300"
+                  style={{ width: `${profileCompletion}%` }}></div>
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {profileCompletion}% complete. Complete your profile to build trust and speed up
+                bookings.
+              </p>
             </div>
-            <div className="h-2 rounded-full bg-surface-secondary overflow-hidden">
-              <div
-                className="h-full bg-primary-600 transition-all duration-300"
-                style={{ width: `${profileCompletion}%` }}></div>
-            </div>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {profileCompletion}% complete. Complete your profile to build trust and speed up
-              bookings.
-            </p>
-          </div>
+          )}
 
           {/* Згорнуті секції */}
           <div className="space-y-4">
