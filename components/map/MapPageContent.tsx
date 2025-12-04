@@ -47,7 +47,7 @@ export function MapPageContent() {
   const allListingsMemo = useMemo(() => {
     if (!listingsData?.listings) return [];
     return listingsData.listings
-      .filter((l: Listing) => l.latitude && l.longitude)
+      .filter((l) => l.latitude && l.longitude)
       .map((l) => ({
         id: l.id,
         title: l.title,
@@ -58,7 +58,7 @@ export function MapPageContent() {
         type: l.type,
         address: l.address,
         images: l.images,
-      }));
+      })) as Listing[];
   }, [listingsData]);
 
   // Синхронізуємо зі старим станом для сумісності
