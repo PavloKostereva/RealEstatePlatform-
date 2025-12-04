@@ -130,14 +130,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Маппінг даних
-    const mappedListings = (listings || []).map((listing: { ownerId?: string; [key: string]: unknown }) => ({
-      ...listing,
-      owner: ownerMap.get(listing.ownerId) || {
-        id: listing.ownerId,
-        name: null,
-        email: null,
-      },
-    }));
+    const mappedListings = (listings || []).map(
+      (listing: { ownerId?: string; [key: string]: unknown }) => ({
+        ...listing,
+        owner: (listing.ownerId ? ownerMap.get(listing.ownerId) : undefined) || {
+          id: listing.ownerId || '',
+          name: null,
+          email: null,
+        },
+      }),
+    );
 
     return NextResponse.json(mappedListings);
   } catch (error) {
