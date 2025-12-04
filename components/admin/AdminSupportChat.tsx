@@ -187,7 +187,7 @@ export function AdminSupportChat() {
                     key={conv.id}
                     onClick={() => {
                       setSelectedConversationId(conv.id);
-                      markAsRead(conv.id);
+                      markAsRead();
                     }}
                     className={`w-full text-left p-4 border-b border-subtle last:border-b-0 hover:bg-surface transition ${
                       selectedConversationId === conv.id ? 'bg-surface' : ''
