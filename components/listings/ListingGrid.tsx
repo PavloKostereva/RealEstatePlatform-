@@ -56,7 +56,22 @@ export function ListingGrid({ compact = false }: ListingGridProps) {
             style={{
               animationDelay: `${index * 30}ms`,
             }}>
-            <ListingCard listing={listing} variant="grid" priority={index < 6} />
+            <ListingCard listing={listing as unknown as {
+              id: string;
+              title: string;
+              type: string;
+              category: string;
+              price: number;
+              currency: string;
+              address: string;
+              images: string[];
+              area?: number;
+              rooms?: number;
+              latitude?: number;
+              longitude?: number;
+              isPrivate?: boolean;
+              private?: boolean;
+            }} variant="grid" priority={index < 6} />
           </div>
         ))}
       </div>
