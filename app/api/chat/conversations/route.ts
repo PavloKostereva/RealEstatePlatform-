@@ -115,12 +115,29 @@ export async function POST(request: NextRequest) {
     }
 
     const finalUserId = userId || session.user.id;
+    const finalAdminIdValue =
+      session.user.role === 'ADMIN' ? session.user.id : finalAdminId || null;
+
+    // Перевіряємо, чи вже існує розмова з цим користувачем
+    if (finalAdminIdValue && finalUserId) {
+      const { data: existingConversation } = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('user_id', finalUserId)
+        .eq('admin_id', finalAdminIdValue)
+        .maybeSingle();
+
+      if (existingConversation) {
+        // Повертаємо існуючу розмову замість створення нової
+        return NextResponse.json(existingConversation, { status: 200 });
+      }
+    }
 
     const { data: conversation, error } = await supabase
       .from('conversations')
       .insert({
         user_id: finalUserId,
-        admin_id: session.user.role === 'ADMIN' ? session.user.id : finalAdminId || null,
+        admin_id: finalAdminIdValue,
         subject: subject || 'Support Request',
         status: 'open',
       })

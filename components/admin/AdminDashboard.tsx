@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAdminStats, useAdminListings } from '@/hooks/useAdmin';
 import { TableRowsSkeleton } from '@/components/skeletons/TableRowsSkeleton';
 import { AdminSupportChat } from './AdminSupportChat';
@@ -13,14 +14,21 @@ interface Listing {
   id: string;
   title: string;
   description?: string;
+  type?: string;
   price: number;
   area?: number | null;
+  rooms?: number | null;
   currency: string;
   category: string;
   address: string;
+  latitude?: number | null;
+  longitude?: number | null;
   status: string;
   createdAt: string;
   images?: string[];
+  amenities?: string[];
+  availableFrom?: string | null;
+  availableTo?: string | null;
   owner?: {
     id: string;
     name?: string | null;
@@ -75,6 +83,7 @@ interface IbanSubmission {
 
 export function AdminDashboard() {
   const toast = useToast();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'listings' | 'approvals' | 'support' | 'iban'>(
     'listings',
   );
@@ -91,6 +100,29 @@ export function AdminDashboard() {
     fromDate: '',
     toDate: '',
   });
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    description: '',
+    type: 'RENT',
+    category: 'APARTMENT',
+    price: '',
+    currency: 'UAH',
+    address: '',
+    latitude: '',
+    longitude: '',
+    area: '',
+    rooms: '',
+    amenities: [] as string[],
+    availableFrom: '',
+    availableTo: '',
+    status: 'DRAFT',
+  });
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
+  const [editLoading, setEditLoading] = useState(false);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   // Зберігаємо стан розгорнутих секцій для кожної вкладки окремо
   const [expandedSectionsByTab, setExpandedSectionsByTab] = useState<
     Record<
@@ -326,8 +358,246 @@ export function AdminDashboard() {
     alert(`Reject flow for listing ${id} is not implemented in this demo.`);
   };
 
+  const handleChatWithOwner = async (listing: Listing) => {
+    if (!listing.owner?.id) {
+      toast.error('Owner information not available');
+      return;
+    }
+
+    try {
+      // Спочатку перевіряємо, чи вже існує розмова з цим користувачем
+      const conversationsRes = await fetch('/api/chat/conversations', {
+        credentials: 'include',
+      });
+
+      if (conversationsRes.ok) {
+        const existingConversations = await conversationsRes.json();
+        // Шукаємо існуючу розмову з цим користувачем
+        const existingConversation = existingConversations.find(
+          (conv: { user_id: string }) => conv.user_id === listing.owner?.id,
+        );
+
+        if (existingConversation) {
+          // Якщо розмова вже існує, просто відкриваємо її
+          setActiveTab('support');
+          // Зберігаємо ID розмови для автоматичного вибору
+          setSelectedConversationId(existingConversation.id);
+          toast.success('Opening existing conversation...');
+          return;
+        }
+      }
+
+      // Якщо розмови не існує, створюємо нову
+      const res = await fetch('/api/chat/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: listing.owner.id,
+          subject: `Chat about listing: ${listing.title}`,
+        }),
+      });
+
+      if (res.ok) {
+        const newConversation = await res.json();
+        // Переходимо на вкладку Support
+        setActiveTab('support');
+        // Встановлюємо ID нової розмови для автоматичного вибору
+        setSelectedConversationId(newConversation.id);
+        toast.success('New conversation created');
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Failed to open chat');
+      }
+    } catch (error) {
+      console.error('Error opening chat:', error);
+      toast.error('Failed to open chat');
+    }
+  };
+
+  const handleEditListing = async (listingId: string) => {
+    // Знаходимо оголошення в списку
+    const listing = [...allListings, ...pendingListings].find((l) => l.id === listingId);
+
+    let listingToEdit = listing;
+
+    if (!listingToEdit) {
+      // Якщо не знайдено в локальному стані, завантажуємо з API
+      try {
+        const res = await fetch(`/api/listings/${listingId}`, {
+          credentials: 'include',
+        });
+        if (res.ok) {
+          listingToEdit = await res.json();
+        } else {
+          toast.error('Failed to load listing details');
+          return;
+        }
+      } catch (error) {
+        console.error('Error fetching listing:', error);
+        toast.error('Failed to load listing details');
+        return;
+      }
+    }
+
+    if (listingToEdit) {
+      setEditingListing(listingToEdit);
+      setEditFormData({
+        title: listingToEdit.title || '',
+        description: listingToEdit.description || '',
+        type: listingToEdit.type || 'RENT',
+        category: listingToEdit.category || 'APARTMENT',
+        price: listingToEdit.price?.toString() || '',
+        currency: listingToEdit.currency || 'UAH',
+        address: listingToEdit.address || '',
+        latitude: listingToEdit.latitude?.toString() || '',
+        longitude: listingToEdit.longitude?.toString() || '',
+        area: listingToEdit.area?.toString() || '',
+        rooms: listingToEdit.rooms?.toString() || '',
+        amenities: listingToEdit.amenities || [],
+        availableFrom: listingToEdit.availableFrom
+          ? new Date(listingToEdit.availableFrom).toISOString().split('T')[0]
+          : '',
+        availableTo: listingToEdit.availableTo
+          ? new Date(listingToEdit.availableTo).toISOString().split('T')[0]
+          : '',
+        status: listingToEdit.status || 'DRAFT',
+      });
+      setEditImages(listingToEdit.images || []);
+      setEditImageFiles([]);
+      setEditModalOpen(true);
+    }
+  };
+
+  const handleDeleteListing = async (listingId: string) => {
+    if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/listings/${listingId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (res.ok) {
+        toast.success('Listing deleted successfully');
+        refreshData();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Failed to delete listing');
+      }
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      toast.error('Failed to delete listing');
+    }
+  };
+
   const toggleFeatureList = () => {
     setShowMoreFeatures((prev) => !prev);
+  };
+
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newFiles = [...editImageFiles, ...files].slice(0, 10 - editImages.length);
+    setEditImageFiles([...editImageFiles, ...newFiles]);
+
+    newFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditImages((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeEditImage = (index: number) => {
+    if (editingListing?.images && index < editingListing.images.length) {
+      setEditImages(editImages.filter((_, i) => i !== index));
+    } else {
+      const newIndex = index - (editingListing?.images?.length || 0);
+      const newFiles = editImageFiles.filter((_, i) => i !== newIndex);
+      const newImages = editImages.filter((_, i) => i !== index);
+      setEditImageFiles(newFiles);
+      setEditImages(newImages);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingListing) return;
+
+    setEditLoading(true);
+
+    try {
+      // Upload new images
+      const uploadedImages: string[] = [];
+      if (editImageFiles.length > 0) {
+        const imageFormData = new FormData();
+        editImageFiles.forEach((file) => {
+          imageFormData.append('images', file);
+        });
+
+        const imageRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: imageFormData,
+        });
+
+        if (imageRes.ok) {
+          const imageData = await imageRes.json();
+          uploadedImages.push(...imageData.urls);
+        }
+      }
+
+      // Combine existing and new images
+      const allImages = [...editImages, ...uploadedImages];
+
+      // Update listing
+      const listingData = {
+        ...editFormData,
+        price: parseFloat(editFormData.price),
+        latitude: editFormData.latitude ? parseFloat(editFormData.latitude) : null,
+        longitude: editFormData.longitude ? parseFloat(editFormData.longitude) : null,
+        area: editFormData.area ? parseFloat(editFormData.area) : null,
+        rooms: editFormData.rooms ? parseInt(editFormData.rooms) : null,
+        availableFrom: editFormData.availableFrom || null,
+        availableTo: editFormData.availableTo || null,
+        images: allImages,
+      };
+
+      const res = await fetch(`/api/listings/${editingListing.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(listingData),
+      });
+
+      if (res.ok) {
+        toast.success('Listing updated successfully');
+        setEditModalOpen(false);
+        setEditingListing(null);
+        refreshData();
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Failed to update listing');
+      }
+    } catch (error) {
+      console.error('Error updating listing:', error);
+      toast.error('Failed to update listing');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const toggleEditAmenity = (amenity: string) => {
+    setEditFormData({
+      ...editFormData,
+      amenities: editFormData.amenities.includes(amenity)
+        ? editFormData.amenities.filter((a) => a !== amenity)
+        : [...editFormData.amenities, amenity],
+    });
   };
 
   const filteredListings = useMemo(() => {
@@ -659,11 +929,12 @@ export function AdminDashboard() {
             <th className="p-2 sm:p-3 md:p-4 text-left hidden md:table-cell">Size</th>
             <th className="p-2 sm:p-3 md:p-4 text-left hidden lg:table-cell">Owner</th>
             <th className="p-2 sm:p-3 md:p-4 text-left">Status</th>
-            {showActions && <th className="p-2 sm:p-3 md:p-4 text-left">Actions</th>}
+            <th className="p-2 sm:p-3 md:p-4 text-left">Chat</th>
+            <th className="p-2 sm:p-3 md:p-4 text-left">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <TableRowsSkeleton rows={5} columns={showActions ? 6 : 5} />
+          <TableRowsSkeleton rows={5} columns={7} />
         </tbody>
       </table>
     ) : (
@@ -675,14 +946,15 @@ export function AdminDashboard() {
             <th className="p-2 sm:p-3 md:p-4 text-left hidden md:table-cell">Size</th>
             <th className="p-2 sm:p-3 md:p-4 text-left hidden lg:table-cell">Owner</th>
             <th className="p-2 sm:p-3 md:p-4 text-left">Status</th>
-            {showActions && <th className="p-2 sm:p-3 md:p-4 text-left">Actions</th>}
+            <th className="p-2 sm:p-3 md:p-4 text-left">Chat</th>
+            <th className="p-2 sm:p-3 md:p-4 text-left">Actions</th>
           </tr>
         </thead>
         <tbody>
           {list.length === 0 ? (
             <tr>
               <td
-                colSpan={showActions ? 6 : 5}
+                colSpan={7}
                 className="p-4 sm:p-6 text-center text-muted-foreground text-xs sm:text-sm">
                 No listings found.
               </td>
@@ -749,22 +1021,45 @@ export function AdminDashboard() {
                     {item.status}
                   </span>
                 </td>
-                {showActions && (
-                  <td className="p-2 sm:p-3 md:p-4">
-                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-                      <button
-                        className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl bg-primary-600 text-white text-[10px] sm:text-xs font-medium hover:bg-primary-700 whitespace-nowrap"
-                        onClick={() => handleApproveListing(item.id)}>
-                        Approve
-                      </button>
-                      <button
-                        className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 whitespace-nowrap"
-                        onClick={() => handleReject(item.id)}>
-                        Reject
-                      </button>
-                    </div>
-                  </td>
-                )}
+                <td className="p-2 sm:p-3 md:p-4">
+                  <button
+                    onClick={() => handleChatWithOwner(item)}
+                    disabled={!item.owner?.id}
+                    className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 hover:text-primary-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors">
+                    Chat
+                  </button>
+                </td>
+                <td className="p-2 sm:p-3 md:p-4">
+                  <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                    {showActions ? (
+                      <>
+                        <button
+                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl bg-primary-600 text-white text-[10px] sm:text-xs font-medium hover:bg-primary-700 whitespace-nowrap"
+                          onClick={() => handleApproveListing(item.id)}>
+                          Approve
+                        </button>
+                        <button
+                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 whitespace-nowrap"
+                          onClick={() => handleReject(item.id)}>
+                          Reject
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 whitespace-nowrap"
+                          onClick={() => handleEditListing(item.id)}>
+                          Edit
+                        </button>
+                        <button
+                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl bg-red-600 text-white text-[10px] sm:text-xs font-medium hover:bg-red-700 whitespace-nowrap"
+                          onClick={() => handleDeleteListing(item.id)}>
+                          Del
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))
           )}
@@ -826,7 +1121,12 @@ export function AdminDashboard() {
               : 'max-h-0 opacity-0'
           }`}>
           <div className="w-full max-w-full p-4 sm:p-6 md:p-8">
-            <AdminSupportChat />
+            <AdminSupportChat
+              initialConversationId={selectedConversationId}
+              onConversationSelected={(id) => {
+                setSelectedConversationId(id);
+              }}
+            />
           </div>
         </div>
       </section>
@@ -1117,6 +1417,296 @@ export function AdminDashboard() {
           {activeTab === 'iban' && renderIban()}
         </div>
       </div>
+
+      {/* Edit Listing Modal */}
+      {editModalOpen && editingListing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface rounded-3xl border border-subtle shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-surface-secondary border-b border-subtle px-6 py-4 flex items-center justify-between z-10">
+              <h2 className="text-xl sm:text-2xl font-semibold text-foreground">Edit Listing</h2>
+              <button
+                onClick={() => {
+                  setEditModalOpen(false);
+                  setEditingListing(null);
+                }}
+                className="text-muted-foreground hover:text-foreground text-2xl">
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.title}
+                  onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                  className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">
+                  Description *
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={editFormData.description}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, description: e.target.value })
+                  }
+                  className="w-full px-4 py-3 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Type *</label>
+                  <select
+                    required
+                    value={editFormData.type}
+                    onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="RENT">Rent</option>
+                    <option value="SALE">Sale</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">
+                    Category *
+                  </label>
+                  <select
+                    required
+                    value={editFormData.category}
+                    onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="APARTMENT">Apartment</option>
+                    <option value="HOUSE">House</option>
+                    <option value="COMMERCIAL">Commercial</option>
+                    <option value="STORAGE">Storage</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Price *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    value={editFormData.price}
+                    onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Currency</label>
+                  <select
+                    value={editFormData.currency}
+                    onChange={(e) => setEditFormData({ ...editFormData, currency: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <option value="UAH">UAH</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Rooms</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editFormData.rooms}
+                    onChange={(e) => setEditFormData({ ...editFormData, rooms: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">
+                    Area (m²)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editFormData.area}
+                    onChange={(e) => setEditFormData({ ...editFormData, area: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">
+                    Address *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.address}
+                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">Latitude</label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={editFormData.latitude}
+                    onChange={(e) => setEditFormData({ ...editFormData, latitude: e.target.value })}
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">
+                    Longitude
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={editFormData.longitude}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, longitude: e.target.value })
+                    }
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">
+                    Available From
+                  </label>
+                  <input
+                    type="date"
+                    value={editFormData.availableFrom}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, availableFrom: e.target.value })
+                    }
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 [color-scheme:dark]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-foreground">
+                    Available To
+                  </label>
+                  <input
+                    type="date"
+                    value={editFormData.availableTo}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, availableTo: e.target.value })
+                    }
+                    className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 [color-scheme:dark]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">Status</label>
+                <select
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                  className="w-full h-11 px-4 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500">
+                  <option value="DRAFT">Draft</option>
+                  <option value="PENDING_REVIEW">Pending Review</option>
+                  <option value="PUBLISHED">Published</option>
+                  <option value="ARCHIVED">Archived</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">
+                  Amenities (click to toggle)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {featurePresets.map((amenity) => (
+                    <button
+                      key={amenity}
+                      type="button"
+                      onClick={() => toggleEditAmenity(amenity)}
+                      className={`px-3 py-1.5 rounded-xl text-sm transition ${
+                        editFormData.amenities.includes(amenity)
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-surface-secondary text-muted-foreground border border-subtle hover:border-primary-400'
+                      }`}>
+                      {amenity}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2 text-foreground">
+                  Images (up to 10)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleEditImageChange}
+                  className="w-full h-11 px-4 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                {editImages.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 mt-4">
+                    {editImages.map((img, idx) => (
+                      <div key={idx} className="relative">
+                        <div className="relative w-full h-24 rounded-lg overflow-hidden border border-subtle">
+                          <Image
+                            src={img}
+                            alt={`Preview ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 25vw, 25vw"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeEditImage(idx)}
+                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700">
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-4 pt-4 border-t border-subtle">
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="flex-1 h-12 rounded-xl bg-primary-600 text-white font-semibold hover:bg-primary-700 disabled:opacity-50 transition">
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditModalOpen(false);
+                    setEditingListing(null);
+                  }}
+                  className="flex-1 h-12 rounded-xl border border-subtle bg-surface-secondary text-foreground font-semibold hover:border-primary-400 transition">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

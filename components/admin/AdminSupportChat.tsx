@@ -38,11 +38,21 @@ interface Message {
   created_at: string;
 }
 
-export function AdminSupportChat() {
+interface AdminSupportChatProps {
+  initialConversationId?: string | null;
+  onConversationSelected?: (conversationId: string | null) => void;
+}
+
+export function AdminSupportChat({
+  initialConversationId,
+  onConversationSelected,
+}: AdminSupportChatProps = {}) {
   const { data: session } = useSession();
   const toast = useToast();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(
+    initialConversationId || null,
+  );
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -62,6 +72,23 @@ export function AdminSupportChat() {
       fetchAllUsers();
     }
   }, [session]);
+
+  // Автоматично вибираємо розмову, якщо передано initialConversationId
+  useEffect(() => {
+    if (initialConversationId && initialConversationId !== selectedConversationId) {
+      setSelectedConversationId(initialConversationId);
+      if (onConversationSelected) {
+        onConversationSelected(initialConversationId);
+      }
+    }
+  }, [initialConversationId]);
+
+  // Оновлюємо батьківський компонент при зміні вибраної розмови
+  useEffect(() => {
+    if (onConversationSelected) {
+      onConversationSelected(selectedConversationId);
+    }
+  }, [selectedConversationId, onConversationSelected]);
 
   // Real-time subscription для conversations
   useEffect(() => {
@@ -588,18 +615,21 @@ export function AdminSupportChat() {
 
         {/* Middle Column - Messages */}
 
-        <div className="w-1/3 border-r border-subtle bg-surface flex flex-col">
+        <div
+          className={`${selectedConversation ? 'w-2/3' : 'w-1/3'} ${
+            !selectedConversation ? 'border-r' : ''
+          } border-subtle bg-surface flex flex-col`}>
           <div className="p-4 border-b border-subtle">
             <h4 className="text-sm font-semibold text-foreground">Select a conversation</h4>
           </div>
           {selectedConversation ? (
             <>
-              <div className="flex-1 overflow-y-auto p-6 sm:p-8 lg:p-10 space-y-5 sm:space-y-6 bg-surface">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3 bg-surface">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-muted-foreground">
                     <div className="text-center">
-                      <p className="text-base">No messages yet.</p>
-                      <p className="text-sm mt-2">Start the conversation!</p>
+                      <p className="text-sm">No messages yet.</p>
+                      <p className="text-xs mt-2">Start the conversation!</p>
                     </div>
                   </div>
                 ) : (
@@ -610,35 +640,35 @@ export function AdminSupportChat() {
                         key={message.id}
                         className={`flex ${isOwn ? 'justify-end' : 'justify-start'} gap-2`}>
                         {!isOwn && (
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm sm:text-base font-semibold flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                             {users.get(message.sender_id)?.name?.[0]?.toUpperCase() ||
                               users.get(message.sender_id)?.email?.[0]?.toUpperCase() ||
                               'U'}
                           </div>
                         )}
                         <div
-                          className={`max-w-[75%] sm:max-w-[70%] rounded-2xl px-5 sm:px-6 py-3 sm:py-4 ${
+                          className={`max-w-[80%] rounded-xl px-3 py-2 ${
                             isOwn
                               ? 'bg-primary-600 text-white rounded-br-none'
                               : 'bg-surface-secondary text-foreground rounded-bl-none'
                           }`}>
                           {!isOwn && (
-                            <p className="text-xs sm:text-sm font-semibold mb-2 opacity-80">
+                            <p className="text-xs font-semibold mb-1 opacity-80">
                               {users.get(message.sender_id)?.name || 'User'}
                             </p>
                           )}
-                          <p className="text-sm sm:text-base lg:text-lg whitespace-pre-wrap break-words leading-relaxed">
+                          <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
                             {message.content}
                           </p>
                           <p
-                            className={`text-xs sm:text-sm mt-2 ${
+                            className={`text-[10px] mt-1 ${
                               isOwn ? 'text-primary-100' : 'text-muted-foreground'
                             }`}>
                             {format(new Date(message.created_at), 'MMM d, h:mm a')}
                           </p>
                         </div>
                         {isOwn && (
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm sm:text-base font-semibold flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                             {session?.user.name?.[0]?.toUpperCase() || 'A'}
                           </div>
                         )}
@@ -693,31 +723,33 @@ export function AdminSupportChat() {
           )}
         </div>
 
-        {/* Right Column - Support Information */}
-        <div className="w-1/3 bg-surface-secondary flex flex-col">
-          <div className="p-4 border-b border-subtle">
-            <h4 className="text-sm font-semibold text-foreground">Support Information</h4>
-          </div>
-          <div className="p-4 space-y-4">
-            <p className="text-sm text-foreground">
-              Select a conversation from the left panel to view and respond to messages.
-            </p>
-            <div>
-              <h5 className="text-sm font-semibold text-foreground mb-2">Quick Actions:</h5>
-              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                <li>Click on any conversation to view messages</li>
-                <li>Respond directly to user inquiries</li>
-                <li>Mark conversations as resolved</li>
-                <li>View conversation history</li>
-              </ul>
+        {/* Right Column - Support Information (only shown when no conversation selected) */}
+        {!selectedConversation && (
+          <div className="w-1/3 bg-surface-secondary flex flex-col">
+            <div className="p-4 border-b border-subtle">
+              <h4 className="text-sm font-semibold text-foreground">Support Information</h4>
             </div>
-            <button
-              onClick={() => setShowUserSelector(!showUserSelector)}
-              className="w-full px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition">
-              {showUserSelector ? 'Cancel' : '+ New Conversation'}
-            </button>
+            <div className="p-4 space-y-4">
+              <p className="text-sm text-foreground">
+                Select a conversation from the left panel to view and respond to messages.
+              </p>
+              <div>
+                <h5 className="text-sm font-semibold text-foreground mb-2">Quick Actions:</h5>
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Click on any conversation to view messages</li>
+                  <li>Respond directly to user inquiries</li>
+                  <li>Mark conversations as resolved</li>
+                  <li>View conversation history</li>
+                </ul>
+              </div>
+              <button
+                onClick={() => setShowUserSelector(!showUserSelector)}
+                className="w-full px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition">
+                {showUserSelector ? 'Cancel' : '+ New Conversation'}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
