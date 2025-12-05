@@ -130,7 +130,7 @@ export function AdminSupportChat({
 
     // Polling (частіше, якщо real-time не працює)
     const pollInterval = supabase ? 30000 : 5000; // 30 сек якщо є real-time, 5 сек якщо ні
-      const interval = setInterval(() => {
+    const interval = setInterval(() => {
       fetchConversations();
     }, pollInterval);
 
@@ -226,7 +226,7 @@ export function AdminSupportChat({
     const hasNewMessages = currentMessageCount > lastMessageCountRef.current;
 
     if (shouldScrollRef.current || hasNewMessages) {
-    scrollToBottom();
+      scrollToBottom();
       shouldScrollRef.current = false;
     }
 
@@ -235,7 +235,7 @@ export function AdminSupportChat({
 
   const scrollToBottom = () => {
     setTimeout(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
   };
 
@@ -424,7 +424,6 @@ export function AdminSupportChat({
     }
   };
 
-
   const markAsRead = async () => {
     // Marking as read is handled automatically when fetching messages
     if (selectedConversationId) {
@@ -567,8 +566,8 @@ export function AdminSupportChat({
               (conversations.length === 0 ? (
                 <div className="text-center text-muted-foreground text-sm py-12 px-4">
                   <p>No conversations yet</p>
-              </div>
-            ) : (
+                </div>
+              ) : (
                 conversations
                   .filter((conv) => {
                     if (!searchQuery) return true;
@@ -586,13 +585,13 @@ export function AdminSupportChat({
                       ? format(new Date(conv.lastMessageDate), 'M/d/yyyy, h:mm:ss a')
                       : format(new Date(conv.last_message_at), 'M/d/yyyy, h:mm:ss a');
 
-                return (
-                  <button
-                    key={conv.id}
-                    onClick={async () => {
-                      setSelectedConversationId(conv.id);
-                      await markAsRead();
-                    }}
+                    return (
+                      <button
+                        key={conv.id}
+                        onClick={async () => {
+                          setSelectedConversationId(conv.id);
+                          await markAsRead();
+                        }}
                         className={`w-full text-left p-4 border-b border-subtle last:border-b-0 hover:bg-surface transition-all duration-200 ease-in-out transform hover:translate-x-1 hover:shadow-md ${
                           selectedConversationId === conv.id
                             ? 'bg-surface border-l-4 border-l-primary-600'
@@ -604,10 +603,10 @@ export function AdminSupportChat({
                             <p className="text-xs text-muted-foreground line-clamp-1">{preview}</p>
                           )}
                           <p className="text-xs text-muted-foreground">{dateStr}</p>
-                    </div>
-                  </button>
-                );
-              })
+                        </div>
+                      </button>
+                    );
+                  })
               ))}
           </div>
         </div>
