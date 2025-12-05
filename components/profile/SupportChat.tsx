@@ -77,8 +77,6 @@ export function SupportChat({ onClose }: SupportChatProps) {
         }
       }
     } catch (error) {
-      console.error('Error fetching conversations:', error);
-      // Якщо помилка, спробуємо створити нову розмову
       await createConversation();
     } finally {
       setLoading(false);

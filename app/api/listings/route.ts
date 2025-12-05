@@ -183,19 +183,6 @@ export async function GET(request: NextRequest) {
 
     const total = count || 0;
     const hasMore = skip + (listings?.length || 0) < total;
-
-    console.log(
-      `[Listings API] Found ${total} total listings, returning ${
-        listings?.length || 0
-      } listings (page ${page}, pageSize ${pageSize})`,
-    );
-    console.log(
-      `[Listings API] Table: ${actualTableName}, Status filter: ${
-        statusParam || 'PUBLISHED (default)'
-      }`,
-    );
-
-    // Отримуємо дані owner для всіх listings
     interface ListingRow {
       ownerId?: string | null;
       [key: string]: unknown;
@@ -212,7 +199,6 @@ export async function GET(request: NextRequest) {
     const ownerMap = new Map<string, OwnerRow>();
 
     if (ownerIds.length > 0) {
-      // Знаходимо правильну назву таблиці User
       const userTableNames = ['User', 'user', 'Users', 'users'];
       let actualUserTableName: string | null = null;
 

@@ -742,14 +742,14 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-3xl bg-gradient-to-r from-primary-600 to-primary-500 text-white p-6 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform animate-in fade-in slide-in-from-bottom duration-500 delay-150">
+            <div className="rounded-3xl bg-gradient-to-r from-primary-600 to-primary-500 text-white p-6 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform animate-in fade-in slide-in-from-bottom delay-150">
               <p className="text-sm text-white/80">Private Listings</p>
               <p className="mt-3 text-4xl font-semibold transition-all duration-500">
                 {listings.length}
               </p>
               <p className="mt-2 text-xs text-white/70">Owned by you</p>
             </div>
-            <div className="rounded-3xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-white p-6 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform animate-in fade-in slide-in-from-bottom duration-500 delay-200">
+            <div className="rounded-3xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-white p-6 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform animate-in fade-in slide-in-from-bottom delay-200">
               <p className="text-sm text-white/80">Account Age (days)</p>
               <p className="mt-3 text-4xl font-semibold transition-all duration-500">
                 {accountAgeDays}

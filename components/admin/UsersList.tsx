@@ -40,7 +40,6 @@ export function UsersList() {
   };
 
   const handleBlock = async (id: string) => {
-    // Implement block functionality
     console.log('Block user:', id);
   };
 

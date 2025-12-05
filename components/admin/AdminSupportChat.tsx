@@ -112,11 +112,9 @@ export function AdminSupportChat() {
         }
       } else {
         const errorData = await res.json();
-        console.error('Error fetching conversations:', errorData);
         setConversations([]);
       }
     } catch (error) {
-      console.error('Error fetching conversations:', error);
       setConversations([]);
     } finally {
       setLoading(false);

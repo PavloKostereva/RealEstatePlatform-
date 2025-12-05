@@ -5,18 +5,8 @@ import { getSupabaseClient } from '@/lib/supabase';
 
 export async function GET(request: NextRequest) {
   try {
-    // Отримуємо headers з request
     const requestHeaders = new Headers(request.headers);
     const cookieHeader = requestHeaders.get('cookie') || '';
-
-    console.log('Admin listings API - Request info:', {
-      hasCookie: !!cookieHeader,
-      cookieLength: cookieHeader.length,
-      cookiePreview: cookieHeader.substring(0, 50),
-      url: request.url,
-    });
-
-    // Створюємо об'єкт req для getServerSession
     const req = {
       headers: Object.fromEntries(requestHeaders.entries()),
     } as { headers: Record<string, string> };
@@ -27,9 +17,6 @@ export async function GET(request: NextRequest) {
     });
 
     if (!session) {
-      console.log('Admin listings API - No session found', {
-        cookieHeader: cookieHeader.substring(0, 100),
-      });
       return NextResponse.json(
         { error: 'Unauthorized', details: 'No session found' },
         { status: 401 },
@@ -37,11 +24,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (session.user.role !== 'ADMIN') {
-      console.log('Admin listings API - User is not ADMIN:', {
-        userId: session.user.id,
-        role: session.user.role,
-        email: session.user.email,
-      });
       return NextResponse.json(
         {
           error: 'Unauthorized',
@@ -51,14 +33,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('Admin listings API - Authorized:', {
-      userId: session.user.id,
-      email: session.user.email,
-    });
-
     const supabase = getSupabaseClient(true);
 
-    // Знаходимо правильну назву таблиці
     const tableNames = ['Listing', 'listings', 'Listings', 'listing'];
     let actualTableName: string | null = null;
 
@@ -79,12 +55,10 @@ export async function GET(request: NextRequest) {
 
     let query = supabase.from(actualTableName).select('*');
 
-    // Фільтр по статусу
     if (status && status !== 'all') {
       query = query.eq('status', status);
     }
 
-    // Сортування
     query = query.order('createdAt', { ascending: false });
 
     const { data: listings, error } = await query;
@@ -97,7 +71,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Отримуємо дані owner для всіх listings
     const ownerIds = Array.from(
       new Set((listings || []).map((l: { ownerId?: string }) => l.ownerId).filter(Boolean)),
     );

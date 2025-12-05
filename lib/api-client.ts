@@ -137,12 +137,6 @@ export const adminApi = {
     const params = status ? `?status=${status}` : '?status=all';
     try {
       const response = await apiClient.get(`/api/admin/listings${params}`);
-      console.log('adminApi.getAdminListings response:', {
-        status: response.status,
-        data: response.data,
-        isArray: Array.isArray(response.data),
-        length: Array.isArray(response.data) ? response.data.length : 'not array',
-      });
       return response.data;
     } catch (error) {
       const errorObj = error as {

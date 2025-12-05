@@ -33,11 +33,6 @@ export async function GET(request: NextRequest) {
     const { data: conversations, error } = await query;
 
     if (error) {
-      console.error('Error fetching conversations:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch conversations', details: error.message },
-        { status: 500 },
-      );
     }
 
     // Отримуємо кількість непрочитаних повідомлень для кожної розмови
@@ -56,17 +51,18 @@ export async function GET(request: NextRequest) {
         unreadMap.set(msg.conversation_id, count + 1);
       });
 
-      const conversationsWithUnread = conversations.map((conv: { id: string; [key: string]: unknown }) => ({
-        ...conv,
-        unread: unreadMap.get(conv.id) || 0,
-      }));
+      const conversationsWithUnread = conversations.map(
+        (conv: { id: string; [key: string]: unknown }) => ({
+          ...conv,
+          unread: unreadMap.get(conv.id) || 0,
+        }),
+      );
 
       return NextResponse.json(conversationsWithUnread);
     }
 
     return NextResponse.json(conversations || []);
   } catch (error) {
-    console.error('Error fetching conversations:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { error: 'Failed to fetch conversations', details: errorMessage },
