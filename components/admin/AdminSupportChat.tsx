@@ -489,7 +489,7 @@ export function AdminSupportChat({
           <button
             onClick={() => fetchConversations(true)}
             disabled={refreshing}
-            className="px-4 py-2 rounded-xl bg-surface text-foreground text-sm font-medium hover:bg-surface-secondary transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            className="px-4 py-2 rounded-xl bg-surface text-foreground text-sm font-medium hover:bg-surface-secondary transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
             {refreshing ? (
               <>
                 <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
@@ -502,13 +502,6 @@ export function AdminSupportChat({
               </>
             )}
           </button>
-          {selectedConversation && selectedConversation.status === 'open' && (
-            <button
-              onClick={() => closeConversation(selectedConversation.id)}
-              className="px-5 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-xl bg-red-600 text-white text-sm sm:text-base font-semibold hover:bg-red-700 whitespace-nowrap">
-              Close Conversation
-            </button>
-          )}
         </div>
       </div>
 
@@ -546,7 +539,7 @@ export function AdminSupportChat({
                               createConversationWithUser(user.id);
                             }
                           }}
-                          className="w-full text-left p-3 rounded-lg bg-surface-secondary hover:bg-surface transition flex items-center gap-3">
+                          className="w-full text-left p-3 rounded-lg bg-surface-secondary hover:bg-surface transition-all duration-200 ease-in-out transform hover:scale-[1.02] hover:shadow-md flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                             {user.name?.[0]?.toUpperCase() || user.email[0]?.toUpperCase() || 'U'}
                           </div>
@@ -596,8 +589,10 @@ export function AdminSupportChat({
                           setSelectedConversationId(conv.id);
                           await markAsRead();
                         }}
-                        className={`w-full text-left p-4 border-b border-subtle last:border-b-0 hover:bg-surface transition ${
-                          selectedConversationId === conv.id ? 'bg-surface' : ''
+                        className={`w-full text-left p-4 border-b border-subtle last:border-b-0 hover:bg-surface transition-all duration-200 ease-in-out transform hover:translate-x-1 hover:shadow-md ${
+                          selectedConversationId === conv.id
+                            ? 'bg-surface border-l-4 border-l-primary-600'
+                            : ''
                         }`}>
                         <div className="flex flex-col gap-1">
                           <p className="font-medium text-foreground text-sm">{email}</p>
@@ -618,7 +613,7 @@ export function AdminSupportChat({
         <div
           className={`${selectedConversation ? 'w-2/3' : 'w-1/3'} ${
             !selectedConversation ? 'border-r' : ''
-          } border-subtle bg-surface flex flex-col`}>
+          } border-subtle bg-surface flex flex-col transition-all duration-500 ease-in-out`}>
           <div className="p-4 border-b border-subtle">
             <h4 className="text-sm font-semibold text-foreground">Select a conversation</h4>
           </div>
@@ -633,12 +628,17 @@ export function AdminSupportChat({
                     </div>
                   </div>
                 ) : (
-                  messages.map((message) => {
+                  messages.map((message, index) => {
                     const isOwn = message.sender_id === session?.user.id;
                     return (
                       <div
                         key={message.id}
-                        className={`flex ${isOwn ? 'justify-end' : 'justify-start'} gap-2`}>
+                        className={`flex ${
+                          isOwn ? 'justify-end' : 'justify-start'
+                        } gap-2 animate-in fade-in ${
+                          isOwn ? 'slide-in-from-right' : 'slide-in-from-left'
+                        } duration-300`}
+                        style={{ animationDelay: `${index * 100}ms` }}>
                         {!isOwn && (
                           <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                             {users.get(message.sender_id)?.name?.[0]?.toUpperCase() ||
@@ -647,10 +647,10 @@ export function AdminSupportChat({
                           </div>
                         )}
                         <div
-                          className={`max-w-[80%] rounded-xl px-3 py-2 ${
+                          className={`max-w-[80%] rounded-xl px-3 py-2 transition-all duration-200 hover:scale-[1.02] ${
                             isOwn
-                              ? 'bg-primary-600 text-white rounded-br-none'
-                              : 'bg-surface-secondary text-foreground rounded-bl-none'
+                              ? 'bg-primary-600 text-white rounded-br-none shadow-md hover:shadow-lg hover:shadow-primary-600/30'
+                              : 'bg-surface-secondary text-foreground rounded-bl-none shadow-sm hover:shadow-md'
                           }`}>
                           {!isOwn && (
                             <p className="text-xs font-semibold mb-1 opacity-80">
@@ -696,14 +696,14 @@ export function AdminSupportChat({
                         : 'Type a message...'
                     }
                     disabled={sending}
-                    className="flex-1 h-10 px-3 rounded-lg border border-subtle bg-surface text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    className="flex-1 h-10 px-3 rounded-lg border border-subtle bg-surface text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-all duration-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
                   />
                   <button
                     onClick={sendMessage}
                     disabled={
                       !newMessage.trim() || sending || selectedConversation.status === 'closed'
                     }
-                    className="h-10 px-4 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                    className="h-10 px-4 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg hover:shadow-primary-600/30">
                     {sending ? (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (

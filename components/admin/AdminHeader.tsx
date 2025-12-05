@@ -45,10 +45,10 @@ export function AdminHeader({
         <button
           key={key}
           onClick={() => onTabChange(key as typeof activeTab)}
-          className={`flex-1 sm:flex-initial px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition whitespace-nowrap ${
+          className={`flex-1 sm:flex-initial px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 ease-in-out whitespace-nowrap transform hover:scale-105 ${
             activeTab === key
-              ? 'bg-primary-600 text-white shadow'
-              : 'text-muted-foreground hover:bg-surface'
+              ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30 scale-105'
+              : 'text-muted-foreground hover:bg-surface hover:text-foreground'
           }`}>
           <span className="hidden sm:inline">{label}</span>
           <span className="sm:hidden">{shortLabel}</span>
@@ -58,7 +58,7 @@ export function AdminHeader({
   );
 
   return (
-    <div className="sticky top-0 z-50 bg-background border-b border-subtle shadow-sm w-full">
+    <div className="sticky top-0 z-50 bg-background border-b border-subtle shadow-sm w-full animate-in fade-in slide-in-from-top duration-300">
       <div className="px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 pt-4 sm:pt-5 md:pt-6 pb-3 sm:pb-4 h-[140px] sm:h-[160px] flex flex-col justify-between overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 flex-shrink-0 h-auto min-h-0">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold whitespace-nowrap flex-shrink-0">
@@ -74,12 +74,12 @@ export function AdminHeader({
             <div className="flex gap-2 sm:gap-3 flex-shrink-0 w-full sm:w-auto">
               <button
                 onClick={onRefresh}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-xs sm:text-sm text-foreground hover:border-primary-400 whitespace-nowrap flex-1 sm:flex-initial">
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-xs sm:text-sm text-foreground hover:border-primary-400 hover:bg-surface transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 whitespace-nowrap flex-1 sm:flex-initial">
                 Refresh
               </button>
               <button
                 onClick={handleSignOut}
-                className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl bg-red-600 text-white text-xs sm:text-sm font-semibold hover:bg-red-700 whitespace-nowrap flex-1 sm:flex-initial">
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl bg-red-600 text-white text-xs sm:text-sm font-semibold hover:bg-red-700 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-red-600/30 whitespace-nowrap flex-1 sm:flex-initial">
                 Sign out
               </button>
             </div>

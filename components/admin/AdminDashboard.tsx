@@ -664,7 +664,7 @@ export function AdminDashboard() {
   };
 
   const renderCreateForm = () => (
-    <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative">
+    <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative animate-in fade-in slide-in-from-bottom duration-500">
       <div className="bg-surface-secondary px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-subtle">
         <button
           onClick={() => toggleSection('createForm')}
@@ -836,7 +836,7 @@ export function AdminDashboard() {
   );
 
   const renderFilters = (showCategory = true) => (
-    <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative">
+    <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative animate-in fade-in slide-in-from-bottom duration-500">
       <div className="bg-surface-secondary px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-subtle flex items-center justify-between gap-2">
         <button
           onClick={() => toggleSection('filters')}
@@ -960,8 +960,11 @@ export function AdminDashboard() {
               </td>
             </tr>
           ) : (
-            list.map((item) => (
-              <tr key={item.id} className="border-b border-subtle/60 last:border-none">
+            list.map((item, index) => (
+              <tr
+                key={item.id}
+                className="border-b border-subtle/60 last:border-none animate-in fade-in slide-in-from-left duration-300"
+                style={{ animationDelay: `${index * 50}ms` }}>
                 <td className="p-2 sm:p-3 md:p-4">
                   <div className="flex items-center gap-2 sm:gap-3">
                     {item.images && item.images.length > 0 && item.images[0] ? (
@@ -1025,7 +1028,7 @@ export function AdminDashboard() {
                   <button
                     onClick={() => handleChatWithOwner(item)}
                     disabled={!item.owner?.id}
-                    className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 hover:text-primary-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-colors">
+                    className="h-8 sm:h-9 px-3 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 hover:text-primary-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95">
                     Chat
                   </button>
                 </td>
@@ -1034,12 +1037,12 @@ export function AdminDashboard() {
                     {showActions ? (
                       <>
                         <button
-                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl bg-primary-600 text-white text-[10px] sm:text-xs font-medium hover:bg-primary-700 whitespace-nowrap"
+                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl bg-primary-600 text-white text-[10px] sm:text-xs font-medium hover:bg-primary-700 whitespace-nowrap transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 shadow-md hover:shadow-primary-600/30"
                           onClick={() => handleApproveListing(item.id)}>
                           Approve
                         </button>
                         <button
-                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 whitespace-nowrap"
+                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 whitespace-nowrap transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95"
                           onClick={() => handleReject(item.id)}>
                           Reject
                         </button>
@@ -1047,12 +1050,12 @@ export function AdminDashboard() {
                     ) : (
                       <>
                         <button
-                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 whitespace-nowrap"
+                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 whitespace-nowrap transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95"
                           onClick={() => handleEditListing(item.id)}>
                           Edit
                         </button>
                         <button
-                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl bg-red-600 text-white text-[10px] sm:text-xs font-medium hover:bg-red-700 whitespace-nowrap"
+                          className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl bg-red-600 text-white text-[10px] sm:text-xs font-medium hover:bg-red-700 whitespace-nowrap transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 shadow-md hover:shadow-red-600/30"
                           onClick={() => handleDeleteListing(item.id)}>
                           Del
                         </button>
@@ -1095,17 +1098,19 @@ export function AdminDashboard() {
 
   const renderSupport = () => {
     return (
-      <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative">
+      <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative animate-in fade-in slide-in-from-bottom duration-500">
         <div className="bg-surface-secondary px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-subtle">
           <button
             onClick={() => toggleSection('support')}
-            className="flex items-center gap-2 flex-1 text-left w-full">
+            className="flex items-center gap-2 flex-1 text-left w-full transition-all duration-200 hover:bg-surface/50 rounded-lg p-2 -m-2">
             <h3 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
-              <span className="text-primary-400 text-lg sm:text-xl">💬</span>
+              <span className="text-primary-400 text-lg sm:text-xl transition-transform duration-300 hover:scale-110">
+                💬
+              </span>
               <span className="hidden sm:inline">Support Chat</span>
               <span className="sm:hidden">Support</span>
             </h3>
-            <span className="text-muted-foreground text-lg sm:text-xl transition-transform duration-200 ml-auto flex-shrink-0">
+            <span className="text-muted-foreground text-lg sm:text-xl transition-transform duration-300 ml-auto flex-shrink-0">
               {expandedSections.support !== undefined
                 ? expandedSections.support
                   ? '▼'
@@ -1115,12 +1120,12 @@ export function AdminDashboard() {
           </button>
         </div>
         <div
-          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`overflow-hidden transition-all duration-500 ease-in-out ${
             (expandedSections.support !== undefined ? expandedSections.support : true)
               ? 'max-h-[5000px] opacity-100'
               : 'max-h-0 opacity-0'
           }`}>
-          <div className="w-full max-w-full p-4 sm:p-6 md:p-8">
+          <div className="w-full max-w-full p-4 sm:p-6 md:p-8 animate-in fade-in duration-300">
             <AdminSupportChat
               initialConversationId={selectedConversationId}
               onConversationSelected={(id) => {
@@ -1420,8 +1425,8 @@ export function AdminDashboard() {
 
       {/* Edit Listing Modal */}
       {editModalOpen && editingListing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-surface rounded-3xl border border-subtle shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-surface rounded-3xl border border-subtle shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
             <div className="sticky top-0 bg-surface-secondary border-b border-subtle px-6 py-4 flex items-center justify-between z-10">
               <h2 className="text-xl sm:text-2xl font-semibold text-foreground">Edit Listing</h2>
               <button
