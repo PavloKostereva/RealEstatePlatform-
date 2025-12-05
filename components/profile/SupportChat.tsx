@@ -30,6 +30,14 @@ interface SupportChatProps {
   onClose?: () => void;
 }
 
+interface AdminUser {
+  id: string;
+  name?: string | null;
+  email: string;
+  avatar?: string | null;
+  role?: string;
+}
+
 export function SupportChat({ onClose }: SupportChatProps) {
   const { data: session } = useSession();
   const [conversation, setConversation] = useState<Conversation | null>(null);
@@ -37,7 +45,10 @@ export function SupportChat({ onClose }: SupportChatProps) {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const shouldScrollRef = useRef(false);
+  const lastMessageCountRef = useRef(0);
 
   useEffect(() => {
     if (session?.user) {
@@ -50,6 +61,7 @@ export function SupportChat({ onClose }: SupportChatProps) {
     if (!conversation) return;
 
     // Спочатку завантажуємо повідомлення
+    shouldScrollRef.current = true; // Прокручуємо при відкритті розмови
     fetchMessages(conversation.id);
 
     // Налаштовуємо real-time підписку для повідомлень (якщо Supabase налаштований)
@@ -79,6 +91,7 @@ export function SupportChat({ onClose }: SupportChatProps) {
                   if (prev.some((m) => m.id === newMessage.id)) {
                     return prev;
                   }
+                  shouldScrollRef.current = true; // Прокручуємо при отриманні нового повідомлення
                   return [...prev, newMessage];
                 });
                 // Оновлюємо розмову для оновлення last_message_at
@@ -113,11 +126,37 @@ export function SupportChat({ onClose }: SupportChatProps) {
   }, [conversation]);
 
   useEffect(() => {
-    scrollToBottom();
+    // Прокручуємо тільки якщо:
+    // 1. shouldScrollRef.current === true (встановлено при відкритті розмови, надсиланні або отриманні повідомлення)
+    // 2. Або кількість повідомлень збільшилася (нове повідомлення)
+    const currentMessageCount = messages.length;
+    const hasNewMessages = currentMessageCount > lastMessageCountRef.current;
+
+    if (shouldScrollRef.current || hasNewMessages) {
+      scrollToBottom();
+      shouldScrollRef.current = false;
+    }
+
+    lastMessageCountRef.current = currentMessageCount;
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+  };
+
+  const fetchAdminInfo = async (adminId: string) => {
+    if (!adminId) return;
+    try {
+      const res = await fetch(`/api/users/${adminId}`);
+      if (res.ok) {
+        const adminData = await res.json();
+        setAdminUser(adminData);
+      }
+    } catch (error) {
+      console.error('Error fetching admin info:', error);
+    }
   };
 
   const fetchOrCreateConversation = async () => {
@@ -128,7 +167,12 @@ export function SupportChat({ onClose }: SupportChatProps) {
         const data = await res.json();
         if (data.length > 0) {
           // Використовуємо першу розмову (має бути тільки одна)
-          setConversation(data[0]);
+          const conv = data[0];
+          setConversation(conv);
+          // Завантажуємо інформацію про адміна, якщо він є
+          if (conv.admin_id) {
+            await fetchAdminInfo(conv.admin_id);
+          }
         } else {
           // Якщо розмови немає, створюємо нову
           await createConversation();
@@ -190,6 +234,7 @@ export function SupportChat({ onClose }: SupportChatProps) {
 
       if (res.ok) {
         const message = await res.json();
+        shouldScrollRef.current = true; // Прокручуємо після надсилання повідомлення
         setMessages([...messages, message]);
         setNewMessage('');
         // Оновлюємо розмову для оновлення last_message_at
@@ -239,25 +284,59 @@ export function SupportChat({ onClose }: SupportChatProps) {
                 </div>
               ) : (
                 messages.map((message) => {
+                  // Визначаємо, чи повідомлення від адміна чи від користувача
+                  const isFromAdmin = conversation?.admin_id
+                    ? message.sender_id === conversation.admin_id
+                    : false;
                   const isOwn = message.sender_id === session?.user.id;
+
                   return (
                     <div
                       key={message.id}
-                      className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      className={`flex gap-2 ${
+                        isOwn ? 'justify-end' : 'justify-start'
+                      } animate-in fade-in ${
+                        isOwn ? 'slide-in-from-right' : 'slide-in-from-left'
+                      } duration-300`}>
+                      {!isOwn && (
+                        <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                          {isFromAdmin
+                            ? adminUser?.name?.[0]?.toUpperCase() || 'A'
+                            : session?.user.name?.[0]?.toUpperCase() || 'U'}
+                        </div>
+                      )}
                       <div
-                        className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                        className={`max-w-[70%] rounded-xl px-3 py-2 transition-all duration-200 hover:scale-[1.02] ${
                           isOwn
-                            ? 'bg-primary-600 text-white rounded-br-none'
-                            : 'bg-surface-secondary text-foreground rounded-bl-none'
+                            ? 'bg-primary-600 text-white rounded-br-none shadow-md hover:shadow-lg hover:shadow-primary-600/30'
+                            : isFromAdmin
+                            ? 'bg-emerald-600 text-white rounded-bl-none shadow-md hover:shadow-lg hover:shadow-emerald-600/30'
+                            : 'bg-surface-secondary text-foreground rounded-bl-none shadow-sm hover:shadow-md'
                         }`}>
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        {!isOwn && isFromAdmin && (
+                          <p className="text-xs font-semibold mb-1 opacity-80">
+                            {adminUser?.name || 'Admin'}
+                          </p>
+                        )}
+                        <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
+                          {message.content}
+                        </p>
                         <p
-                          className={`text-xs mt-1 ${
-                            isOwn ? 'text-primary-100' : 'text-muted-foreground'
+                          className={`text-[10px] mt-1 ${
+                            isOwn
+                              ? 'text-primary-100'
+                              : isFromAdmin
+                              ? 'text-emerald-100'
+                              : 'text-muted-foreground'
                           }`}>
-                          {format(new Date(message.created_at), 'h:mm:ss a')}
+                          {format(new Date(message.created_at), 'MMM d, h:mm a')}
                         </p>
                       </div>
+                      {isOwn && (
+                        <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                          {session?.user.name?.[0]?.toUpperCase() || 'U'}
+                        </div>
+                      )}
                     </div>
                   );
                 })
