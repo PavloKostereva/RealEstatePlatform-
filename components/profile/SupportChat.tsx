@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
+import { createClient } from '@/utils/supabase/client';
 
 interface Conversation {
   id: string;
@@ -44,14 +45,71 @@ export function SupportChat({ onClose }: SupportChatProps) {
     }
   }, [session]);
 
+  // Real-time subscription для messages
   useEffect(() => {
-    if (conversation) {
-      fetchMessages(conversation.id);
-      const interval = setInterval(() => {
-        fetchMessages(conversation.id);
-      }, 3000);
-      return () => clearInterval(interval);
+    if (!conversation) return;
+
+    // Спочатку завантажуємо повідомлення
+    fetchMessages(conversation.id);
+
+    // Налаштовуємо real-time підписку для повідомлень (якщо Supabase налаштований)
+    const supabase = createClient();
+    let messagesChannel: { unsubscribe: () => void } | null = null;
+
+    if (supabase) {
+      try {
+        messagesChannel = supabase
+          .channel(`messages-${conversation.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'messages',
+              filter: `conversation_id=eq.${conversation.id}`,
+            },
+            (payload) => {
+              console.log('Message change:', payload);
+
+              if (payload.eventType === 'INSERT') {
+                // Додаємо нове повідомлення
+                const newMessage = payload.new as Message;
+                setMessages((prev) => {
+                  // Перевіряємо, чи повідомлення вже є (щоб уникнути дублікатів)
+                  if (prev.some((m) => m.id === newMessage.id)) {
+                    return prev;
+                  }
+                  return [...prev, newMessage];
+                });
+                // Оновлюємо розмову для оновлення last_message_at
+                fetchOrCreateConversation();
+              } else if (payload.eventType === 'UPDATE') {
+                // Оновлюємо існуюче повідомлення (наприклад, статус read)
+                const updatedMessage = payload.new as Message;
+                setMessages((prev) =>
+                  prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m)),
+                );
+              }
+            },
+          )
+          .subscribe();
+      } catch (error) {
+        console.warn('Failed to subscribe to messages changes:', error);
+      }
     }
+
+    // Polling (частіше, якщо real-time не працює)
+    const pollInterval = supabase ? 30000 : 3000; // 30 сек якщо є real-time, 3 сек якщо ні
+    const interval = setInterval(() => {
+      fetchMessages(conversation.id);
+    }, pollInterval);
+
+    return () => {
+      if (messagesChannel) {
+        messagesChannel.unsubscribe();
+      }
+      clearInterval(interval);
+    };
   }, [conversation]);
 
   useEffect(() => {

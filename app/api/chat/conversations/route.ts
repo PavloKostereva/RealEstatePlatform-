@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getSupabaseClient } from '@/lib/supabase';
 
-// Отримати всі розмови користувача або адміна
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -33,9 +32,13 @@ export async function GET(request: NextRequest) {
     const { data: conversations, error } = await query;
 
     if (error) {
+      console.error('Error fetching conversations:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch conversations', details: error.message },
+        { status: 500 },
+      );
     }
 
-    // Отримуємо кількість непрочитаних повідомлень для кожної розмови
     if (conversations && conversations.length > 0) {
       const conversationIds = conversations.map((c: { id: string }) => c.id);
       const { data: unreadCounts } = await supabase
@@ -80,41 +83,32 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { subject, adminId } = body;
+    const { subject, adminId, userId } = body;
 
     const supabase = getSupabaseClient(true);
 
     let finalAdminId = adminId;
     if (!finalAdminId && session.user.role !== 'ADMIN') {
-      const { data: admin } = await supabase
-        .from('User')
-        .select('id')
-        .eq('role', 'ADMIN')
-        .limit(1)
-        .maybeSingle();
+      const { prisma } = await import('@/lib/prisma');
+      const admin = await prisma.user.findFirst({
+        where: { role: 'ADMIN' },
+        select: { id: true },
+      });
 
       if (admin) {
         finalAdminId = admin.id;
-      } else {
-        // Спробуємо з малої літери
-        const { data: adminLower } = await supabase
-          .from('user')
-          .select('id')
-          .eq('role', 'ADMIN')
-          .limit(1)
-          .maybeSingle();
-
-        if (adminLower) {
-          finalAdminId = adminLower.id;
-        }
       }
     }
+
+    // Якщо адмін створює розмову, використовуємо userId з запиту
+    // Якщо користувач створює розмову, використовуємо його ID
+    const finalUserId = userId || session.user.id;
 
     const { data: conversation, error } = await supabase
       .from('conversations')
       .insert({
-        user_id: session.user.id,
-        admin_id: finalAdminId || null,
+        user_id: finalUserId,
+        admin_id: session.user.role === 'ADMIN' ? session.user.id : finalAdminId || null,
         subject: subject || 'Support Request',
         status: 'open',
       })

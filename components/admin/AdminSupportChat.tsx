@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/ToastContainer';
+import { createClient } from '@/utils/supabase/client';
 
 interface User {
   id: string;
   name?: string | null;
   email: string;
   avatar?: string | null;
+  role?: string;
 }
 
 interface Conversation {
@@ -43,27 +45,137 @@ export function AdminSupportChat() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'closed'>('all');
   const [users, setUsers] = useState<Map<string, User>>(new Map());
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [showUserSelector, setShowUserSelector] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Завантажуємо список користувачів при завантаженні
   useEffect(() => {
-    if (session?.user) {
-      fetchConversations();
-      const interval = setInterval(() => {
-        fetchConversations();
-      }, 5000);
-      return () => clearInterval(interval);
+    if (session?.user && session.user.role === 'ADMIN') {
+      fetchAllUsers();
     }
   }, [session]);
 
+  // Real-time subscription для conversations
   useEffect(() => {
-    if (selectedConversationId) {
-      fetchMessages(selectedConversationId);
-      const interval = setInterval(() => {
-        fetchMessages(selectedConversationId);
-      }, 3000);
-      return () => clearInterval(interval);
+    if (!session?.user) return;
+
+    // Спочатку завантажуємо дані
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchConversations();
+
+    // Налаштовуємо real-time підписку (якщо Supabase налаштований)
+    const supabase = createClient();
+    let conversationsChannel: { unsubscribe: () => void } | null = null;
+
+    if (supabase) {
+      try {
+        // Підписка на зміни в conversations
+        conversationsChannel = supabase
+          .channel('conversations-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'conversations',
+            },
+            (payload) => {
+              console.log('Conversation change:', payload);
+              // Оновлюємо список розмов при будь-яких змінах
+              fetchConversations();
+            },
+          )
+          .subscribe();
+      } catch (error) {
+        console.warn('Failed to subscribe to conversations changes:', error);
+      }
     }
+
+    // Polling (частіше, якщо real-time не працює)
+    const pollInterval = supabase ? 30000 : 5000; // 30 сек якщо є real-time, 5 сек якщо ні
+    const interval = setInterval(() => {
+      fetchConversations();
+    }, pollInterval);
+
+    return () => {
+      if (conversationsChannel) {
+        conversationsChannel.unsubscribe();
+      }
+      clearInterval(interval);
+    };
+  }, [session, statusFilter]);
+
+  // Real-time subscription для messages
+  useEffect(() => {
+    if (!selectedConversationId) return;
+
+    // Спочатку завантажуємо повідомлення
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetchMessages(selectedConversationId);
+
+    // Налаштовуємо real-time підписку для повідомлень (якщо Supabase налаштований)
+    const supabase = createClient();
+    let messagesChannel: { unsubscribe: () => void } | null = null;
+
+    if (supabase) {
+      try {
+        messagesChannel = supabase
+          .channel(`messages-${selectedConversationId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'messages',
+              filter: `conversation_id=eq.${selectedConversationId}`,
+            },
+            (payload) => {
+              console.log('Message change:', payload);
+
+              if (payload.eventType === 'INSERT') {
+                // Додаємо нове повідомлення
+                const newMessage = payload.new as Message;
+                setMessages((prev) => {
+                  // Перевіряємо, чи повідомлення вже є (щоб уникнути дублікатів)
+                  if (prev.some((m) => m.id === newMessage.id)) {
+                    return prev;
+                  }
+                  return [...prev, newMessage];
+                });
+                // Оновлюємо список розмов для оновлення last_message_at
+                fetchConversations();
+              } else if (payload.eventType === 'UPDATE') {
+                // Оновлюємо існуюче повідомлення (наприклад, статус read)
+                const updatedMessage = payload.new as Message;
+                setMessages((prev) =>
+                  prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m)),
+                );
+              }
+            },
+          )
+          .subscribe();
+      } catch (error) {
+        console.warn('Failed to subscribe to messages changes:', error);
+      }
+    }
+
+    // Polling (частіше, якщо real-time не працює)
+    const pollInterval = supabase ? 30000 : 3000; // 30 сек якщо є real-time, 3 сек якщо ні
+    const interval = setInterval(() => {
+      fetchMessages(selectedConversationId);
+    }, pollInterval);
+
+    return () => {
+      if (messagesChannel) {
+        messagesChannel.unsubscribe();
+      }
+      clearInterval(interval);
+    };
   }, [selectedConversationId]);
 
   useEffect(() => {
@@ -89,9 +201,66 @@ export function AdminSupportChat() {
     }
   };
 
-  const fetchConversations = async () => {
+  const fetchAllUsers = async () => {
     try {
+      const res = await fetch('/api/admin/users', {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Фільтруємо адмінів, щоб не показувати їх у списку
+        const nonAdminUsers = data.filter((user: User) => user.role !== 'ADMIN');
+        setAllUsers(nonAdminUsers);
+        // Додаємо користувачів до мапи для швидкого доступу
+        nonAdminUsers.forEach((user: User) => {
+          setUsers((prev) => new Map(prev).set(user.id, user));
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+    }
+  };
+
+  const createConversationWithUser = async (userId: string) => {
+    try {
+      const user = allUsers.find((u) => u.id === userId);
       const res = await fetch('/api/chat/conversations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          subject: `Chat with ${user?.name || user?.email || 'User'}`,
+          userId: userId,
+          adminId: session?.user.id,
+        }),
+      });
+
+      if (res.ok) {
+        const newConversation = await res.json();
+        await fetchConversations();
+        setSelectedConversationId(newConversation.id);
+        setShowUserSelector(false);
+        toast.success('Conversation created successfully');
+      } else {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        toast.error(`Failed to create conversation: ${errorData.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      toast.error('Failed to create conversation. Please try again.');
+    }
+  };
+
+  const fetchConversations = async (showRefreshing = false) => {
+    if (showRefreshing) {
+      setRefreshing(true);
+    }
+    try {
+      const url =
+        statusFilter !== 'all'
+          ? `/api/chat/conversations?status=${statusFilter}`
+          : '/api/chat/conversations';
+      const res = await fetch(url, {
         credentials: 'include',
       });
       if (res.ok) {
@@ -111,13 +280,30 @@ export function AdminSupportChat() {
           setSelectedConversationId(data[0].id);
         }
       } else {
-        const errorData = await res.json();
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Error fetching conversations:', errorData);
         setConversations([]);
+
+        // Перевіряємо, чи це помилка про відсутність таблиці
+        if (
+          errorData.details &&
+          errorData.details.includes('conversations') &&
+          errorData.details.includes('schema cache')
+        ) {
+          setSetupError(
+            'Chat tables need to be created in Supabase. Please run the SQL script from supabase-chat-schema.sql in your Supabase SQL Editor.',
+          );
+        } else if (errorData.error && !errorData.error.includes('Unauthorized')) {
+          toast.error(`Failed to load conversations: ${errorData.error}`);
+        }
       }
     } catch (error) {
+      console.error('Error fetching conversations:', error);
       setConversations([]);
+      toast.error('Failed to load conversations. Please try again.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -130,13 +316,17 @@ export function AdminSupportChat() {
         const data = await res.json();
         setMessages(data || []);
       } else {
-        const errorData = await res.json();
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Error fetching messages:', errorData);
         setMessages([]);
+        if (errorData.error && !errorData.error.includes('Unauthorized')) {
+          toast.error(`Failed to load messages: ${errorData.error}`);
+        }
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
       setMessages([]);
+      toast.error('Failed to load messages. Please try again.');
     }
   };
 
@@ -159,6 +349,7 @@ export function AdminSupportChat() {
         const message = await res.json();
         setMessages((prev) => [...prev, message]);
         setNewMessage('');
+        // Оновлюємо розмови, щоб відобразити зміни статусу (якщо розмова була закрита, вона відкриється)
         await fetchConversations();
         await fetchMessages(selectedConversationId);
         scrollToBottom();
@@ -218,6 +409,43 @@ export function AdminSupportChat() {
     );
   }
 
+  if (setupError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 px-4">
+        <div className="max-w-2xl w-full rounded-2xl border border-red-500/50 bg-red-500/10 p-8 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="text-4xl">⚠️</div>
+            <h3 className="text-xl font-semibold text-foreground">Chat Tables Not Found</h3>
+          </div>
+          <p className="text-foreground">{setupError}</p>
+          <div className="bg-surface rounded-lg p-4 space-y-2">
+            <p className="text-sm font-medium text-foreground">Steps to fix:</p>
+            <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+              <li>Open your Supabase Dashboard</li>
+              <li>Go to SQL Editor</li>
+              <li>
+                Copy and paste the SQL from{' '}
+                <code className="bg-surface-secondary px-2 py-1 rounded">
+                  supabase-chat-schema.sql
+                </code>
+              </li>
+              <li>Run the SQL script</li>
+              <li>Refresh this page</li>
+            </ol>
+          </div>
+          <button
+            onClick={() => {
+              setSetupError(null);
+              fetchConversations();
+            }}
+            className="w-full px-6 py-3 rounded-xl bg-primary-600 text-white font-medium hover:bg-primary-700 transition">
+            Retry After Setup
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-[600px] w-full">
       {/* Header with close button */}
@@ -227,19 +455,37 @@ export function AdminSupportChat() {
             Support Chat
           </h3>
         </div>
-        {selectedConversation && selectedConversation.status === 'open' && (
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => closeConversation(selectedConversation.id)}
-            className="px-5 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-xl bg-red-600 text-white text-sm sm:text-base font-semibold hover:bg-red-700 whitespace-nowrap">
-            Close Conversation
+            onClick={() => fetchConversations(true)}
+            disabled={refreshing}
+            className="px-4 py-2 rounded-xl bg-surface text-foreground text-sm font-medium hover:bg-surface-secondary transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            {refreshing ? (
+              <>
+                <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+                Refreshing...
+              </>
+            ) : (
+              <>
+                <span>↻</span>
+                Refresh
+              </>
+            )}
           </button>
-        )}
+          {selectedConversation && selectedConversation.status === 'open' && (
+            <button
+              onClick={() => closeConversation(selectedConversation.id)}
+              className="px-5 sm:px-6 lg:px-8 py-2.5 sm:py-3 rounded-xl bg-red-600 text-white text-sm sm:text-base font-semibold hover:bg-red-700 whitespace-nowrap">
+              Close Conversation
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-[500px]">
         <div className="w-full sm:w-1/3 lg:w-1/4 border-r border-subtle bg-surface-secondary flex flex-col">
           <div className="p-5 sm:p-6 lg:p-8 border-b border-subtle">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-foreground">
                 All Conversations
               </h4>
@@ -247,14 +493,91 @@ export function AdminSupportChat() {
                 {conversations.length}
               </span>
             </div>
+            <button
+              onClick={() => setShowUserSelector(!showUserSelector)}
+              className="w-full mb-4 px-4 py-2 rounded-xl bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition flex items-center justify-center gap-2">
+              <span>+</span>
+              New Conversation
+            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
+                  statusFilter === 'all'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-surface text-foreground hover:bg-surface-secondary'
+                }`}>
+                All
+              </button>
+              <button
+                onClick={() => setStatusFilter('open')}
+                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
+                  statusFilter === 'open'
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-surface text-foreground hover:bg-surface-secondary'
+                }`}>
+                Open
+              </button>
+              <button
+                onClick={() => setStatusFilter('closed')}
+                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
+                  statusFilter === 'closed'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-surface text-foreground hover:bg-surface-secondary'
+                }`}>
+                Closed
+              </button>
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {conversations.length === 0 ? (
+            {showUserSelector && (
+              <div className="p-4 border-b border-subtle bg-surface max-h-[300px] overflow-y-auto">
+                <h5 className="text-sm font-semibold text-foreground mb-3">Select User</h5>
+                {allUsers.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Loading users...</p>
+                ) : (
+                  <div className="space-y-2">
+                    {allUsers.map((user) => {
+                      // Перевіряємо, чи вже є розмова з цим користувачем
+                      const existingConv = conversations.find((c) => c.user_id === user.id);
+                      return (
+                        <button
+                          key={user.id}
+                          onClick={() => {
+                            if (existingConv) {
+                              setSelectedConversationId(existingConv.id);
+                              setShowUserSelector(false);
+                            } else {
+                              createConversationWithUser(user.id);
+                            }
+                          }}
+                          className="w-full text-left p-3 rounded-lg bg-surface-secondary hover:bg-surface transition flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                            {user.name?.[0]?.toUpperCase() || user.email[0]?.toUpperCase() || 'U'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground text-sm truncate">
+                              {user.name || user.email}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                          </div>
+                          {existingConv && (
+                            <span className="text-xs text-muted-foreground">Existing</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+            {conversations.length === 0 && !showUserSelector ? (
               <div className="text-center text-muted-foreground text-sm sm:text-base py-12 px-4">
                 <p className="mb-2">No conversations yet</p>
-                <p className="text-xs sm:text-sm">New conversations will appear here</p>
+                <p className="text-xs sm:text-sm">Click "New Conversation" to start chatting</p>
               </div>
             ) : (
+              !showUserSelector &&
               conversations.map((conv) => {
                 return (
                   <button
@@ -401,15 +724,17 @@ export function AdminSupportChat() {
                         sendMessage();
                       }
                     }}
-                    placeholder="Type a message..."
-                    disabled={selectedConversation.status === 'closed' || sending}
+                    placeholder={
+                      selectedConversation.status === 'closed'
+                        ? 'Type a message to reopen this conversation...'
+                        : 'Type a message...'
+                    }
+                    disabled={sending}
                     className="flex-1 h-12 sm:h-14 lg:h-16 px-5 sm:px-6 lg:px-8 rounded-xl border border-subtle bg-surface text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base lg:text-lg"
                   />
                   <button
                     onClick={sendMessage}
-                    disabled={
-                      !newMessage.trim() || sending || selectedConversation.status === 'closed'
-                    }
+                    disabled={!newMessage.trim() || sending}
                     className="h-12 sm:h-14 lg:h-16 px-6 sm:px-8 lg:px-10 rounded-xl bg-primary-600 text-white text-sm sm:text-base lg:text-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center whitespace-nowrap shadow-md">
                     {sending ? (
                       <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -420,7 +745,7 @@ export function AdminSupportChat() {
                 </div>
                 {selectedConversation.status === 'closed' && (
                   <p className="text-xs sm:text-sm text-muted-foreground mt-3 text-center">
-                    This conversation is closed. Reopen it by sending a message.
+                    This conversation is closed. Send a message to reopen it.
                   </p>
                 )}
               </div>
