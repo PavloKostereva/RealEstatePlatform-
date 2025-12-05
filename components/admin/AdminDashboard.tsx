@@ -154,12 +154,10 @@ export function AdminDashboard() {
     isLoading: pendingListingsLoading,
   } = useAdminListings('PENDING_REVIEW');
 
-  // Синхронізуємо дані з React Query
   useEffect(() => {
     if (statsData) {
       setStats(statsData as unknown as StatsData);
     } else if (statsError) {
-      // Встановлюємо порожні дані при помилці
       setStats({
         totalListings: 0,
         totalUsers: 0,
@@ -172,7 +170,6 @@ export function AdminDashboard() {
     }
   }, [statsData, statsError]);
 
-  // Завантажуємо IBAN submissions
   useEffect(() => {
     if (activeTab === 'iban') {
       fetchIbanSubmissions();
@@ -227,7 +224,6 @@ export function AdminDashboard() {
     }
   }, [pendingListingsData]);
 
-  // Мемоізуємо функцію refresh
   const refreshData = useCallback(async () => {
     await Promise.all([refetchStats(), refetchAllListings(), refetchPending()]);
   }, [refetchStats, refetchAllListings, refetchPending]);
@@ -838,10 +834,8 @@ export function AdminDashboard() {
       return;
     }
 
-    // Заголовки CSV
     const headers = ['ID', 'Email', 'IBAN', 'Created At'];
 
-    // Конвертуємо дані в CSV формат
     const csvRows = [
       headers.join(','),
       ...ibanSubmissions.map((submission) => {
@@ -875,11 +869,13 @@ export function AdminDashboard() {
   };
 
   const renderIban = () => (
-    <div className="rounded-3xl border border-subtle bg-surface shadow-md p-8 space-y-6 w-full max-w-full mx-auto">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">IBAN Submissions</h3>
+    <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 sm:p-8 md:p-10 space-y-6 sm:space-y-8 w-full">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground">
+          IBAN Submissions
+        </h3>
         <button
-          className="text-sm text-primary-500 hover:text-primary-600"
+          className="text-sm sm:text-base text-primary-500 hover:text-primary-600 whitespace-nowrap font-medium"
           onClick={() => {
             refreshData();
             fetchIbanSubmissions();
@@ -887,68 +883,74 @@ export function AdminDashboard() {
           Refresh
         </button>
       </div>
-      <div className="grid md:grid-cols-3 gap-4 text-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 text-sm">
         <input
           placeholder="Email, IBAN..."
-          className="h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+          className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
         />
         <input
           placeholder="From date"
-          className="h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+          className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
         />
         <input
           placeholder="To date"
-          className="h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+          className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
         />
       </div>
-      <div className="rounded-2xl border border-subtle bg-surface-secondary p-8">
+      <div className="rounded-2xl border border-subtle bg-surface-secondary p-6 sm:p-8 md:p-10">
         {ibanLoading ? (
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
           </div>
         ) : ibanSubmissions.length === 0 ? (
-          <div className="text-center text-muted-foreground">
-            <p className="mb-4">No IBAN submissions found</p>
+          <div className="text-center text-muted-foreground py-8 sm:py-12">
+            <p className="mb-6 text-base sm:text-lg">No IBAN submissions found</p>
             <button
-              className="h-10 px-4 rounded-xl border border-subtle bg-surface text-sm text-foreground hover:border-primary-400"
+              className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl border border-subtle bg-surface text-sm sm:text-base text-foreground hover:border-primary-400 font-medium"
               onClick={exportIbanToCSV}
               disabled>
               Export CSV
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-foreground font-medium">
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <p className="text-foreground font-semibold text-base sm:text-lg">
                 Found {ibanSubmissions.length} submission{ibanSubmissions.length !== 1 ? 's' : ''}
               </p>
               <button
-                className="h-10 px-4 rounded-xl bg-primary-600 text-white text-sm font-medium hover:bg-primary-700"
+                className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl bg-primary-600 text-white text-sm sm:text-base font-medium hover:bg-primary-700 whitespace-nowrap"
                 onClick={exportIbanToCSV}>
                 Export CSV
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs sm:text-sm">
+              <table className="w-full text-sm sm:text-base">
                 <thead className="bg-surface border-b border-subtle">
                   <tr>
-                    <th className="p-2 sm:p-3 text-left text-muted-foreground">Email</th>
-                    <th className="p-2 sm:p-3 text-left text-muted-foreground hidden sm:table-cell">
+                    <th className="p-4 sm:p-5 text-left text-muted-foreground font-semibold">
+                      Email
+                    </th>
+                    <th className="p-4 sm:p-5 text-left text-muted-foreground font-semibold hidden sm:table-cell">
                       IBAN
                     </th>
-                    <th className="p-2 sm:p-3 text-left text-muted-foreground">Created At</th>
+                    <th className="p-4 sm:p-5 text-left text-muted-foreground font-semibold">
+                      Created At
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {ibanSubmissions.map((submission: IbanSubmission) => (
-                    <tr key={submission.id} className="border-b border-subtle/60 last:border-none">
-                      <td className="p-2 sm:p-3 text-foreground text-xs sm:text-sm break-all">
+                    <tr
+                      key={submission.id}
+                      className="border-b border-subtle/60 last:border-none hover:bg-surface-secondary/50 transition-colors">
+                      <td className="p-4 sm:p-5 text-foreground text-sm sm:text-base break-all">
                         {submission.email}
                       </td>
-                      <td className="p-2 sm:p-3 text-foreground font-mono text-[10px] sm:text-xs hidden sm:table-cell break-all">
+                      <td className="p-4 sm:p-5 text-foreground font-mono text-xs sm:text-sm hidden sm:table-cell break-all">
                         {submission.iban}
                       </td>
-                      <td className="p-2 sm:p-3 text-muted-foreground text-xs sm:text-sm">
+                      <td className="p-4 sm:p-5 text-muted-foreground text-sm sm:text-base">
                         {new Date(submission.createdAt).toLocaleString()}
                       </td>
                     </tr>
@@ -964,7 +966,6 @@ export function AdminDashboard() {
 
   return (
     <div className="max-w-[95rem] mx-auto text-foreground">
-      {/* Fixed Header */}
       <AdminHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -975,7 +976,6 @@ export function AdminDashboard() {
         onRefresh={refreshData}
       />
 
-      {/* Content with padding */}
       <div className="px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6">
         <div className="space-y-8 w-full max-w-full mx-auto">
           {activeTab === 'listings' && (
@@ -1002,14 +1002,41 @@ export function AdminDashboard() {
           {activeTab === 'approvals' && (
             <>
               {renderFilters(false)}
-              <div className="flex justify-end -mt-4 mb-4">
-                <button
-                  onClick={handleApproveAll}
-                  disabled={!pendingListings.length}
-                  className="h-10 px-4 rounded-xl bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700 disabled:opacity-50">
-                  Approve all pending
-                </button>
-              </div>
+              <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative">
+                <div className="bg-surface-secondary px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-subtle">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+                      <span className="text-primary-400 text-lg sm:text-xl">✓</span>
+                      <span className="hidden sm:inline">Approve All Pending</span>
+                      <span className="sm:hidden">Approve All</span>
+                    </h3>
+                  </div>
+                </div>
+                <div className="p-8 sm:p-10 md:p-12">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+                    <div className="flex-1">
+                      <p className="text-sm sm:text-base text-muted-foreground mb-2">
+                        Approve all pending listings at once
+                      </p>
+                      <p className="text-xs sm:text-sm text-muted-foreground/70">
+                        {pendingListings.length > 0
+                          ? `${pendingListings.length} listing${
+                              pendingListings.length !== 1 ? 's' : ''
+                            } pending approval`
+                          : 'No pending listings'}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <button
+                        onClick={handleApproveAll}
+                        disabled={!pendingListings.length}
+                        className="h-12 sm:h-14 px-8 sm:px-10 rounded-xl bg-primary-600 text-white text-base sm:text-lg font-semibold shadow hover:bg-primary-700 disabled:opacity-50 whitespace-nowrap transition-all">
+                        Approve all pending
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
               {renderListingsTable(pendingListings, true, pendingListingsLoading)}
             </>
           )}

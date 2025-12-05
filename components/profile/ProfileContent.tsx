@@ -252,30 +252,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   const handleSignOut = () => {
     router.push('/how-it-works?logout=true');
   };
-
-  // Reserved for future implementation
-  // const handleApproveAll = async () => {
-  //   toast.info('Approve all listings is not implemented in this demo.');
-  // };
-
-  // const handleReject = (id: string) => {
-  //   toast.info(`Reject flow for listing ${id} is not implemented in this demo.`);
-  // };
-
-  // const toggleFeatureList = () => {
-  //   toast.info('Toggle feature list is not implemented in this demo.');
-  // };
-
-  // const renderFeatureChip = (feature: string, idx: number) => {
-  //   return (
-  //     <span
-  //       key={idx}
-  //       className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-surface-secondary text-muted-foreground">
-  //       {feature}
-  //     </span>
-  //   );
-  // };
-
   const handleEditProfile = () => {
     setEditMode(true);
     scrollToSection(personalInfoRef);
@@ -413,10 +389,8 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   const filledFields = personalInfoFields.filter((field) => field && field.trim() !== '').length;
   const totalFields = personalInfoFields.length;
   const profileCompletion = Math.round((filledFields / totalFields) * 100);
-  // Розрахунок заробітків на основі опублікованих listings
   const publishedListings = listings.filter((l) => l.status === 'PUBLISHED');
 
-  // Розрахунок заробітків за різні періоди
   const calculateEarnings = (period: 'month' | 'quarter' | 'year') => {
     const now = new Date();
     let startDate: Date;
@@ -434,7 +408,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
         break;
     }
 
-    // Фільтруємо listings, створені в цьому періоді
     const periodListings = publishedListings.filter((listing) => {
       const dateStr = (listing.createdAt || listing.updatedAt) as string | undefined;
       if (!dateStr || typeof dateStr !== 'string') return false;
@@ -442,15 +415,13 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
       return listingDate >= startDate;
     });
 
-    // Розраховуємо суму (можна додати комісію, наприклад 10%)
     const total = periodListings.reduce((sum, listing) => sum + (listing.price || 0), 0);
-    const commission = 0.1; // 10% комісія платформи
+    const commission = 0.1;
     return total * (1 - commission);
   };
 
   const earnings = calculateEarnings(earningsPeriod);
 
-  // Дані для графіка (останні 5 місяців)
   const getChartData = () => {
     const months = [];
     const now = new Date();
@@ -473,7 +444,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthName = monthNames[date.getMonth()];
 
-      // Розраховуємо заробітки за цей місяць
       const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
       const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
 
@@ -489,10 +459,8 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
       months.push({ name: monthName, earnings: monthEarnings });
     }
 
-    // Розраховуємо максимальне значення для нормалізації висоти
     const maxEarnings = Math.max(...months.map((m) => m.earnings), 1);
 
-    // Додаємо висоту для кожного місяця (мінімум 5% для візуалізації)
     return months.map((month) => ({
       ...month,
       height: maxEarnings > 0 ? Math.max((month.earnings / maxEarnings) * 100, 5) : 5,
@@ -520,7 +488,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
     }));
   };
 
-  // SVG іконки для навігації
   const getIcon = (label: string) => {
     const iconClass = 'w-5 h-5';
     switch (label) {
@@ -649,18 +616,15 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
       return;
     }
 
-    // Визначаємо, яку секцію потрібно розгорнути
     let sectionToExpand: keyof typeof expandedSections | null = null;
 
     switch (item.label) {
       case 'Dashboard':
-        // Dashboard завжди на початку, не потребує розгортання
         break;
       case 'Documents':
         sectionToExpand = 'documents';
         break;
       case 'Payments':
-        // Payments - це quickActions, не має окремої секції для розгортання
         break;
       case 'Calendar':
       case 'Bookings':
@@ -674,16 +638,14 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
         break;
     }
 
-    // Розгортаємо секцію, якщо вона згорнута
     if (sectionToExpand && !expandedSections[sectionToExpand]) {
       toggleSection(sectionToExpand);
     }
 
-    // Прокручуємо до секції
     if (item.ref) {
       setTimeout(() => {
         scrollToSection(item.ref);
-      }, 100); // Невелика затримка для завершення анімації розгортання
+      }, 100);
     }
   };
 
@@ -705,7 +667,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   return (
     <div ref={topRef} className="max-w-7xl mx-auto px-4 py-10 animate-in fade-in duration-500">
       <div className="grid gap-6 lg:grid-cols-[240px,1fr,300px]">
-        {/* Ліва панель навігації */}
         <aside className="hidden lg:flex flex-col gap-4 bg-surface rounded-3xl border border-subtle shadow-md p-4 animate-in slide-in-from-left duration-500">
           <nav className="space-y-1 text-sm">
             {navItems.map((item) => (
@@ -739,9 +700,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
           </div>
         </aside>
 
-        {/* Центральна область */}
         <main className="space-y-6">
-          {/* Картка профілю */}
           <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 animate-in fade-in slide-in-from-bottom duration-500">
             <div className="flex items-center gap-4 mb-4">
               {user.avatar ? (
@@ -782,7 +741,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             </div>
           </div>
 
-          {/* Статистичні картки */}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-3xl bg-gradient-to-r from-primary-600 to-primary-500 text-white p-6 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform animate-in fade-in slide-in-from-bottom duration-500 delay-150">
               <p className="text-sm text-white/80">Private Listings</p>
@@ -804,7 +762,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             </div>
           </div>
 
-          {/* Profile Completeness - Показується тільки якщо профіль не заповнений на 100% */}
           {profileCompletion < 100 && (
             <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 animate-in fade-in slide-in-from-bottom duration-500 delay-250">
               <div className="flex items-center justify-between mb-4">
@@ -824,9 +781,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             </div>
           )}
 
-          {/* Згорнуті секції */}
           <div className="space-y-4">
-            {/* Personal Info */}
             <div
               ref={personalInfoRef}
               className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
@@ -979,7 +934,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
               </div>
             </div>
 
-            {/* Documents */}
             <div
               ref={documentsRef}
               className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
@@ -1037,7 +991,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
               </div>
             </div>
 
-            {/* Messages */}
             <div
               ref={messagesRef}
               className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
@@ -1069,7 +1022,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
               </div>
             </div>
 
-            {/* Support */}
             <div
               ref={supportRef}
               className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
@@ -1129,7 +1081,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
               </div>
             </div>
 
-            {/* Bookings */}
             <div
               ref={bookingsRef}
               className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
@@ -1203,7 +1154,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
               </div>
             </div>
 
-            {/* Listings */}
             <div
               ref={listingsRef}
               className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
@@ -1304,7 +1254,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
               </div>
             </div>
 
-            {/* Affiliate Code */}
             <div
               ref={affiliateRef}
               className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
@@ -1409,9 +1358,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
           </div>
         </main>
 
-        {/* Права панель */}
         <aside className="hidden lg:flex flex-col gap-6 animate-in fade-in slide-in-from-right duration-500">
-          {/* Referral Code */}
           <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 transition-all duration-300 hover:shadow-lg">
             <p className="text-sm text-muted-foreground mb-2">You already have a referral code:</p>
             <p className="text-lg font-semibold text-foreground font-mono transition-all duration-300">
@@ -1419,7 +1366,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             </p>
           </div>
 
-          {/* Quick Actions */}
           <div
             ref={quickActionsRef}
             className="rounded-3xl border border-subtle bg-surface shadow-md p-6 transition-all duration-300 hover:shadow-lg">
@@ -1477,7 +1423,6 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             </div>
           </div>
 
-          {/* Upload Listing */}
           <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 transition-all duration-300 hover:shadow-lg">
             <p className="text-sm text-muted-foreground mb-4">Upload a listing to view data</p>
             <Link

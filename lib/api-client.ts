@@ -1,20 +1,17 @@
 import axios, { AxiosInstance } from 'axios';
 
-// Створюємо базовий axios інстанс з налаштуваннями
 const createApiClient = (): AxiosInstance => {
   const client = axios.create({
     baseURL: typeof window !== 'undefined' ? window.location.origin : '',
     timeout: 30000,
-    withCredentials: true, // Важливо: передаємо cookies для авторизації
+    withCredentials: true,
     headers: {
       'Content-Type': 'application/json',
     },
   });
 
-  // Request interceptor для додавання токенів тощо
   client.interceptors.request.use(
     (config) => {
-      // Можна додати токени авторизації тут
       return config;
     },
     (error) => {
@@ -22,13 +19,10 @@ const createApiClient = (): AxiosInstance => {
     },
   );
 
-  // Response interceptor для обробки помилок
   client.interceptors.response.use(
     (response) => response,
     (error) => {
-      // Глобальна обробка помилок
       if (error.response?.status === 401) {
-        // Можна додати логіку редиректу на логін
       }
       return Promise.reject(error);
     },
@@ -39,7 +33,6 @@ const createApiClient = (): AxiosInstance => {
 
 export const apiClient = createApiClient();
 
-// Типи для API відповідей
 export interface ApiResponse<T> {
   data: T;
   message?: string;
@@ -59,7 +52,6 @@ export interface ListingsResponse {
   hasMore: boolean;
 }
 
-// API функції з кешуванням
 export const listingsApi = {
   getListings: async (
     params?: Record<string, string | number | boolean>,
@@ -129,7 +121,6 @@ export const adminApi = {
       return data;
     } catch (error) {
       console.error('Error fetching admin stats:', error);
-      // Повертаємо порожні дані замість викидання помилки
       return {
         totalListings: 0,
         totalUsers: 0,
