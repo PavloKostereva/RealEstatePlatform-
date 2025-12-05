@@ -429,7 +429,7 @@ export function MyListingsPageContent({ userId }: MyListingsPageContentProps) {
       const allImages = [...existingImages, ...uploadedImages];
 
       // Prepare update data
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         title: editingFormData.title,
         description: editingFormData.subtitle,
         price: parseFloat(editingFormData.price) || 0,

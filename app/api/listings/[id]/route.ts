@@ -111,7 +111,7 @@ export async function PUT(
     const body = await request.json()
     
     // Валідація та підготовка даних для оновлення
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
     
     if (body.title !== undefined) updateData.title = body.title
     if (body.description !== undefined) updateData.description = body.description

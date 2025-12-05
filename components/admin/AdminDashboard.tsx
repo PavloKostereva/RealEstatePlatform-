@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAdminStats, useAdminListings } from '@/hooks/useAdmin';
 import { TableRowsSkeleton } from '@/components/skeletons/TableRowsSkeleton';
 import { AdminSupportChat } from './AdminSupportChat';
@@ -83,7 +82,6 @@ interface IbanSubmission {
 
 export function AdminDashboard() {
   const toast = useToast();
-  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'listings' | 'approvals' | 'support' | 'iban'>(
     'listings',
   );

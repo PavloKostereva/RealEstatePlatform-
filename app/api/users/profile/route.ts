@@ -72,6 +72,7 @@ export async function PUT(request: NextRequest) {
 
     if (result1.error) {
       if (result1.error.code === '42703' || result1.error.message?.includes('column')) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { location: _, bio: __, ...baseUpdateData } = updateData;
 
         const result2 = await supabase

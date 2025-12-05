@@ -61,7 +61,7 @@ export function SupportContent() {
             <div className="mb-6">
               <h2 className="text-2xl font-bold text-foreground mb-2">Chat with Support</h2>
               <p className="text-muted-foreground">
-                Start a conversation with our support team. We'll respond as soon as possible.
+                Start a conversation with our support team. We&apos;ll respond as soon as possible.
               </p>
             </div>
             <SupportChat />

@@ -6,7 +6,6 @@ import { getSupabaseClient } from '@/lib/supabase';
 export async function GET(request: NextRequest) {
   try {
     const requestHeaders = new Headers(request.headers);
-    const cookieHeader = requestHeaders.get('cookie') || '';
     const req = {
       headers: Object.fromEntries(requestHeaders.entries()),
     } as { headers: Record<string, string> };

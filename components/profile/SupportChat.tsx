@@ -134,7 +134,7 @@ export function SupportChat({ onClose }: SupportChatProps) {
           await createConversation();
         }
       }
-    } catch (error) {
+    } catch {
       await createConversation();
     } finally {
       setLoading(false);

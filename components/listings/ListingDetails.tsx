@@ -63,7 +63,6 @@ export function ListingDetails({ listing }: ListingDetailsProps) {
   const { data: session } = useSession();
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [bookingLoading, setBookingLoading] = useState(false);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
@@ -476,7 +475,7 @@ export function ListingDetails({ listing }: ListingDetailsProps) {
           {/* Vehicle restrictions */}
           <div className="bg-surface rounded-2xl border border-subtle p-6 shadow-lg">
             <h2 className="text-xl font-bold text-foreground mb-3">Vehicle restrictions</h2>
-            <p className="text-muted-foreground">This host hasn't specified restrictions.</p>
+            <p className="text-muted-foreground">This host hasn&apos;t specified restrictions.</p>
           </div>
 
           {/* Policies */}
@@ -607,7 +606,7 @@ export function ListingDetails({ listing }: ListingDetailsProps) {
                   }
                   setIsCheckoutModalOpen(true);
                 }}
-                disabled={!selectedDate || bookingLoading}
+                disabled={!selectedDate}
                 className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-xl transition shadow-lg hover:shadow-xl mb-6">
                 Book & Pay
               </button>
