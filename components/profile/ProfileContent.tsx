@@ -703,21 +703,21 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
   ];
 
   return (
-    <div ref={topRef} className="max-w-7xl mx-auto px-4 py-10">
+    <div ref={topRef} className="max-w-7xl mx-auto px-4 py-10 animate-in fade-in duration-500">
       <div className="grid gap-6 lg:grid-cols-[240px,1fr,300px]">
         {/* Ліва панель навігації */}
-        <aside className="hidden lg:flex flex-col gap-4 bg-surface rounded-3xl border border-subtle shadow-md p-4">
+        <aside className="hidden lg:flex flex-col gap-4 bg-surface rounded-3xl border border-subtle shadow-md p-4 animate-in slide-in-from-left duration-500">
           <nav className="space-y-1 text-sm">
             {navItems.map((item) => (
               <button
                 key={item.label}
-                className={`w-full text-left px-3 py-2.5 rounded-xl transition flex items-center gap-2 ${
+                className={`w-full text-left px-3 py-2.5 rounded-xl transition-all duration-300 flex items-center gap-2 transform hover:scale-[1.02] active:scale-[0.98] ${
                   item.active
-                    ? 'bg-primary-600 text-white shadow'
-                    : 'text-muted-foreground hover:bg-surface-secondary'
+                    ? 'bg-primary-600 text-white shadow-lg scale-[1.02]'
+                    : 'text-muted-foreground hover:bg-surface-secondary hover:text-foreground'
                 }`}
                 onClick={() => handleNavClick(item)}>
-                <span>{item.icon}</span>
+                <span className="transition-transform duration-300">{item.icon}</span>
                 <span>{item.label}</span>
               </button>
             ))}
@@ -742,24 +742,24 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
         {/* Центральна область */}
         <main className="space-y-6">
           {/* Картка профілю */}
-          <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6">
+          <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 animate-in fade-in slide-in-from-bottom duration-500">
             <div className="flex items-center gap-4 mb-4">
               {user.avatar ? (
-                <div className="relative w-16 h-16 rounded-full overflow-hidden">
+                <div className="relative w-16 h-16 rounded-full overflow-hidden ring-2 ring-primary-500/20 transition-all duration-300 hover:ring-primary-500/40 hover:scale-110">
                   <Image
                     src={user.avatar}
                     alt={user.name || 'User'}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-300 hover:scale-110"
                     sizes="64px"
                   />
                 </div>
               ) : (
-                <div className="w-16 h-16 rounded-full bg-primary-600 flex items-center justify-center text-xl font-semibold text-white">
+                <div className="w-16 h-16 rounded-full bg-primary-600 flex items-center justify-center text-xl font-semibold text-white transition-all duration-300 hover:scale-110 hover:shadow-lg">
                   {user.name?.[0]?.toUpperCase() || user.email[0]?.toUpperCase() || 'U'}
                 </div>
               )}
-              <div className="flex-1">
+              <div className="flex-1 animate-in fade-in slide-in-from-left duration-500 delay-100">
                 <h3 className="text-lg font-semibold text-foreground uppercase">
                   {user.name || 'User'}
                 </h3>
@@ -768,14 +768,14 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             </div>
             <div className="flex gap-2">
               <button
-                className="flex-1 h-11 rounded-xl bg-primary-600 text-white text-sm font-semibold shadow-md hover:bg-primary-700 transition-all hover:shadow-lg"
+                className="flex-1 h-11 rounded-xl bg-primary-600 text-white text-sm font-semibold shadow-md hover:bg-primary-700 transition-all duration-300 hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]"
                 onClick={handleEditProfile}>
                 Edit profile
               </button>
               {isOwnProfile && (
                 <button
                   onClick={handleSignOut}
-                  className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-semibold shadow hover:bg-red-700">
+                  className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-semibold shadow transition-all duration-300 hover:bg-red-700 hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]">
                   Logout
                 </button>
               )}
@@ -784,14 +784,18 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
 
           {/* Статистичні картки */}
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-3xl bg-gradient-to-r from-primary-600 to-primary-500 text-white p-6 shadow-md">
+            <div className="rounded-3xl bg-gradient-to-r from-primary-600 to-primary-500 text-white p-6 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform animate-in fade-in slide-in-from-bottom duration-500 delay-150">
               <p className="text-sm text-white/80">Private Listings</p>
-              <p className="mt-3 text-4xl font-semibold">{listings.length}</p>
+              <p className="mt-3 text-4xl font-semibold transition-all duration-500">
+                {listings.length}
+              </p>
               <p className="mt-2 text-xs text-white/70">Owned by you</p>
             </div>
-            <div className="rounded-3xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-white p-6 shadow-md">
+            <div className="rounded-3xl bg-gradient-to-r from-emerald-500 to-emerald-400 text-white p-6 shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] transform animate-in fade-in slide-in-from-bottom duration-500 delay-200">
               <p className="text-sm text-white/80">Account Age (days)</p>
-              <p className="mt-3 text-4xl font-semibold">{accountAgeDays}</p>
+              <p className="mt-3 text-4xl font-semibold transition-all duration-500">
+                {accountAgeDays}
+              </p>
               <p className="mt-2 text-xs text-white/70">
                 {user.createdAt && typeof user.createdAt === 'string'
                   ? new Date(user.createdAt).toLocaleDateString()
@@ -802,16 +806,18 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
 
           {/* Profile Completeness - Показується тільки якщо профіль не заповнений на 100% */}
           {profileCompletion < 100 && (
-            <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6">
+            <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 animate-in fade-in slide-in-from-bottom duration-500 delay-250">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-foreground">Profile Completeness</h3>
               </div>
-              <div className="h-2 rounded-full bg-surface-secondary overflow-hidden">
+              <div className="h-2 rounded-full bg-surface-secondary overflow-hidden shadow-inner">
                 <div
-                  className="h-full bg-primary-600 transition-all duration-300"
-                  style={{ width: `${profileCompletion}%` }}></div>
+                  className="h-full bg-gradient-to-r from-primary-600 to-primary-500 transition-all duration-700 ease-out rounded-full relative overflow-hidden"
+                  style={{ width: `${profileCompletion}%` }}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                </div>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-sm text-muted-foreground transition-all duration-300">
                 {profileCompletion}% complete. Complete your profile to build trust and speed up
                 bookings.
               </p>
@@ -823,23 +829,31 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             {/* Personal Info */}
             <div
               ref={personalInfoRef}
-              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
+              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
               <button
                 onClick={() => toggleSection('personalInfo')}
-                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
+                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]">
                 <div className="flex items-center gap-3">
-                  {getIcon('My Profile')}
+                  <span className="transition-transform duration-300">{getIcon('My Profile')}</span>
                   <h3 className="text-lg font-semibold text-foreground">Personal info</h3>
                 </div>
-                <span className="text-muted-foreground text-xl transition-transform duration-200">
-                  {expandedSections.personalInfo ? '▼' : '▶'}
+                <span
+                  className={`text-muted-foreground text-xl transition-transform duration-300 ${
+                    expandedSections.personalInfo ? 'rotate-0' : '-rotate-90'
+                  }`}>
+                  ▼
                 </span>
               </button>
-              {expandedSections.personalInfo && (
-                <div className="px-6 pb-6 pt-0 transition-all duration-300 ease-in-out">
+              <div
+                className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                  expandedSections.personalInfo ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                <div className="px-6 pb-6 pt-0">
                   <div className="grid md:grid-cols-2 gap-4 mt-4">
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Full name</label>
+                      <label className="text-sm font-medium text-muted-foreground transition-colors duration-300">
+                        Full name
+                      </label>
                       <input
                         value={
                           editMode && isOwnProfile && !isDemoProfile ? editData.name : displayName
@@ -847,10 +861,10 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                         onChange={(e) => setEditData((prev) => ({ ...prev, name: e.target.value }))}
                         readOnly={!(editMode && isOwnProfile && !isDemoProfile)}
                         placeholder={isDemoProfile ? 'Demo User' : 'Add full name'}
-                        className={`mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground ${
+                        className={`mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground transition-all duration-300 ${
                           editMode && isOwnProfile && !isDemoProfile
-                            ? 'focus:outline-none focus:ring-2 focus:ring-primary-500'
-                            : ''
+                            ? 'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 hover:border-primary-400'
+                            : 'hover:border-subtle-hover'
                         }`}
                       />
                     </div>
@@ -865,7 +879,9 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                      <label className="text-sm font-medium text-muted-foreground transition-colors duration-300">
+                        Phone
+                      </label>
                       <input
                         value={
                           editMode && isOwnProfile && !isDemoProfile ? editData.phone : displayPhone
@@ -875,15 +891,17 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                         }
                         readOnly={!(editMode && isOwnProfile && !isDemoProfile)}
                         placeholder={isDemoProfile ? '+380 00 000 00 00' : 'Add phone'}
-                        className={`mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground ${
+                        className={`mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground transition-all duration-300 ${
                           editMode && isOwnProfile && !isDemoProfile
-                            ? 'focus:outline-none focus:ring-2 focus:ring-primary-500'
-                            : ''
+                            ? 'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 hover:border-primary-400'
+                            : 'hover:border-subtle-hover'
                         }`}
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">Location</label>
+                      <label className="text-sm font-medium text-muted-foreground transition-colors duration-300">
+                        Location
+                      </label>
                       <input
                         value={
                           editMode && isOwnProfile && !isDemoProfile
@@ -895,50 +913,62 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                         }
                         readOnly={!(editMode && isOwnProfile && !isDemoProfile)}
                         placeholder={isDemoProfile ? 'City, Country' : 'City, Country'}
-                        className={`mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground ${
+                        className={`mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground transition-all duration-300 ${
                           editMode && isOwnProfile && !isDemoProfile
-                            ? 'focus:outline-none focus:ring-2 focus:ring-primary-500'
-                            : ''
+                            ? 'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 hover:border-primary-400'
+                            : 'hover:border-subtle-hover'
                         }`}
                       />
                     </div>
                   </div>
                   <div className="mt-4">
-                    <label className="text-sm font-medium text-muted-foreground">About you</label>
+                    <label className="text-sm font-medium text-muted-foreground transition-colors duration-300">
+                      About you
+                    </label>
                     <textarea
                       value={editMode && isOwnProfile && !isDemoProfile ? editData.bio : displayBio}
                       onChange={(e) => setEditData((prev) => ({ ...prev, bio: e.target.value }))}
                       readOnly={!(editMode && isOwnProfile && !isDemoProfile)}
                       placeholder={isDemoProfile ? 'Short bio' : 'Describe yourself'}
-                      className={`mt-1 w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground ${
+                      className={`mt-1 w-full px-3 py-2 rounded-xl border border-subtle bg-surface-secondary text-foreground transition-all duration-300 resize-none ${
                         editMode && isOwnProfile && !isDemoProfile
-                          ? 'focus:outline-none focus:ring-2 focus:ring-primary-500'
-                          : ''
+                          ? 'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 hover:border-primary-400'
+                          : 'hover:border-subtle-hover'
                       }`}
                       rows={3}
                     />
                   </div>
 
                   {isOwnProfile && !isDemoProfile && (
-                    <div className="mt-6 flex justify-end gap-3">
+                    <div
+                      className={`mt-6 flex justify-end gap-3 transition-all duration-500 ${
+                        editMode ? 'animate-in fade-in slide-in-from-bottom' : ''
+                      }`}>
                       {editMode ? (
                         <>
                           <button
-                            className="h-10 px-4 rounded-xl border border-subtle bg-surface-secondary text-sm font-medium text-muted-foreground hover:border-primary-400"
+                            className="h-10 px-4 rounded-xl border border-subtle bg-surface-secondary text-sm font-medium text-muted-foreground transition-all duration-300 hover:border-primary-400 hover:bg-primary-50 hover:text-primary-600 transform hover:scale-[1.02] active:scale-[0.98]"
                             onClick={handleCancelEdit}
                             disabled={savingProfile}>
                             Cancel
                           </button>
                           <button
-                            className="h-10 px-5 rounded-xl bg-primary-600 text-white text-sm font-semibold shadow hover:bg-primary-700 disabled:opacity-60"
+                            className="h-10 px-5 rounded-xl bg-primary-600 text-white text-sm font-semibold shadow transition-all duration-300 hover:bg-primary-700 hover:shadow-lg disabled:opacity-60 transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none"
                             onClick={handleSaveProfile}
                             disabled={savingProfile}>
-                            {savingProfile ? 'Saving...' : 'Save changes'}
+                            {savingProfile ? (
+                              <span className="flex items-center gap-2">
+                                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                Saving...
+                              </span>
+                            ) : (
+                              'Save changes'
+                            )}
                           </button>
                         </>
                       ) : (
                         <button
-                          className="h-11 px-6 rounded-xl bg-primary-600 text-white text-sm font-semibold shadow-md hover:bg-primary-700 transition-all hover:shadow-lg"
+                          className="h-11 px-6 rounded-xl bg-primary-600 text-white text-sm font-semibold shadow-md transition-all duration-300 hover:bg-primary-700 hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]"
                           onClick={handleEditProfile}>
                           Edit profile
                         </button>
@@ -946,26 +976,32 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                     </div>
                   )}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Documents */}
             <div
               ref={documentsRef}
-              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
+              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
               <button
                 onClick={() => toggleSection('documents')}
-                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
+                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]">
                 <div className="flex items-center gap-3">
-                  {getIcon('Documents')}
+                  <span className="transition-transform duration-300">{getIcon('Documents')}</span>
                   <h3 className="text-lg font-semibold text-foreground">Documents</h3>
                 </div>
-                <span className="text-muted-foreground text-xl transition-transform duration-200">
-                  {expandedSections.documents ? '▼' : '▶'}
+                <span
+                  className={`text-muted-foreground text-xl transition-transform duration-300 ${
+                    expandedSections.documents ? 'rotate-0' : '-rotate-90'
+                  }`}>
+                  ▼
                 </span>
               </button>
-              {expandedSections.documents && (
-                <div className="px-6 pb-6 pt-0 transition-all duration-300 ease-in-out">
+              <div
+                className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                  expandedSections.documents ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                <div className="px-6 pb-6 pt-0">
                   <div className="mt-4 space-y-3 text-sm">
                     {listingsTable.length === 0 ? (
                       <p className="text-muted-foreground">No documents yet.</p>
@@ -982,7 +1018,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                             </p>
                           </div>
                           <button
-                            className="rounded-lg border border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-foreground hover:border-primary-400"
+                            className="rounded-lg border border-subtle bg-surface-secondary px-3 py-1 text-xs font-medium text-foreground transition-all duration-300 hover:border-primary-400 hover:bg-primary-50 hover:text-primary-600 transform hover:scale-[1.05] active:scale-[0.95]"
                             onClick={() => router.push(`/listings/${item.id}`)}>
                             View
                           </button>
@@ -991,72 +1027,84 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                     )}
                   </div>
                   <button
-                    className="w-full h-10 rounded-xl border border-subtle bg-surface-secondary text-sm font-medium text-foreground hover:border-primary-400 mt-4"
+                    className="w-full h-10 rounded-xl border border-subtle bg-surface-secondary text-sm font-medium text-foreground transition-all duration-300 hover:border-primary-400 hover:bg-primary-50 hover:text-primary-600 mt-4 transform hover:scale-[1.02] active:scale-[0.98]"
                     onClick={() =>
                       listingsTable[0] ? router.push(`/listings/${listingsTable[0].id}`) : undefined
                     }>
                     Open last confirmation
                   </button>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Messages */}
             <div
               ref={messagesRef}
-              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
+              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
               <button
                 onClick={() => toggleSection('messages')}
-                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
+                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]">
                 <div className="flex items-center gap-3">
-                  {getIcon('Messages')}
+                  <span className="transition-transform duration-300">{getIcon('Messages')}</span>
                   <h3 className="text-lg font-semibold text-foreground">Messages</h3>
                 </div>
-                <span className="text-muted-foreground text-xl transition-transform duration-200">
-                  {expandedSections.messages ? '▼' : '▶'}
+                <span
+                  className={`text-muted-foreground text-xl transition-transform duration-300 ${
+                    expandedSections.messages ? 'rotate-0' : '-rotate-90'
+                  }`}>
+                  ▼
                 </span>
               </button>
-              {expandedSections.messages && (
-                <div className="px-6 pb-6 pt-0 transition-all duration-300 ease-in-out">
+              <div
+                className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                  expandedSections.messages ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                <div className="px-6 pb-6 pt-0">
                   <div className="mt-4 flex flex-col gap-4">
-                    <div className="text-center py-12 text-muted-foreground">
+                    <div className="text-center py-12 text-muted-foreground animate-in fade-in duration-500">
                       <p>No messages yet.</p>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Support */}
             <div
               ref={supportRef}
-              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
+              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
               <button
                 onClick={() => toggleSection('support')}
-                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
+                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]">
                 <div className="flex items-center gap-3">
-                  {getIcon('Support')}
+                  <span className="transition-transform duration-300">{getIcon('Support')}</span>
                   <h3 className="text-lg font-semibold text-foreground">Support</h3>
                 </div>
-                <span className="text-muted-foreground text-xl transition-transform duration-200">
-                  {expandedSections.support ? '▼' : '▶'}
+                <span
+                  className={`text-muted-foreground text-xl transition-transform duration-300 ${
+                    expandedSections.support ? 'rotate-0' : '-rotate-90'
+                  }`}>
+                  ▼
                 </span>
               </button>
-              {expandedSections.support && (
-                <div className="px-6 pb-6 pt-0 transition-all duration-300 ease-in-out">
+              <div
+                className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                  expandedSections.support ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                <div className="px-6 pb-6 pt-0">
                   <div className="mt-4">
                     {isOwnProfile ? (
                       showSupportChat ? (
                         <SupportChat onClose={() => setShowSupportChat(false)} />
                       ) : (
-                        <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 text-center">
+                        <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 text-center animate-in fade-in slide-in-from-bottom duration-500">
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                               <h3 className="text-lg font-semibold text-foreground">Support</h3>
                             </div>
                             <button
                               onClick={() => toggleSection('support')}
-                              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+                              className="text-sm text-muted-foreground transition-colors duration-300 hover:text-foreground flex items-center gap-1 transform hover:scale-110">
                               Hide <span>^</span>
                             </button>
                           </div>
@@ -1066,55 +1114,61 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                           </p>
                           <button
                             onClick={() => setShowSupportChat(true)}
-                            className="w-full h-12 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 flex items-center justify-center gap-2">
+                            className="w-full h-12 rounded-xl bg-primary-600 text-white font-semibold shadow transition-all duration-300 hover:bg-primary-700 hover:shadow-lg flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-[0.98]">
                             Contact Support
                           </button>
                         </div>
                       )
                     ) : (
-                      <div className="text-center py-12 text-muted-foreground">
+                      <div className="text-center py-12 text-muted-foreground animate-in fade-in duration-500">
                         <p>Please sign in to access support chat</p>
                       </div>
                     )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Bookings */}
             <div
               ref={bookingsRef}
-              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
+              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
               <button
                 onClick={() => toggleSection('bookings')}
-                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
+                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]">
                 <div className="flex items-center gap-3">
-                  {getIcon('Bookings')}
+                  <span className="transition-transform duration-300">{getIcon('Bookings')}</span>
                   <h3 className="text-lg font-semibold text-foreground">Bookings</h3>
                 </div>
-                <span className="text-muted-foreground text-xl transition-transform duration-200">
-                  {expandedSections.bookings ? '▼' : '▶'}
+                <span
+                  className={`text-muted-foreground text-xl transition-transform duration-300 ${
+                    expandedSections.bookings ? 'rotate-0' : '-rotate-90'
+                  }`}>
+                  ▼
                 </span>
               </button>
-              {expandedSections.bookings && (
-                <div className="px-6 pb-6 pt-0 transition-all duration-300 ease-in-out">
+              <div
+                className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                  expandedSections.bookings ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                <div className="px-6 pb-6 pt-0">
                   <div className="mt-4 space-y-4">
                     <div className="flex gap-2 rounded-xl bg-surface-secondary p-1">
                       <button
                         onClick={() => setActiveBookingTab('my-bookings')}
-                        className={`flex-1 h-9 rounded-lg text-sm font-medium transition-colors ${
+                        className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all duration-300 transform ${
                           activeBookingTab === 'my-bookings'
-                            ? 'bg-primary-600 text-white'
-                            : 'text-muted-foreground hover:bg-surface'
+                            ? 'bg-primary-600 text-white shadow-md scale-[1.02]'
+                            : 'text-muted-foreground hover:bg-surface hover:scale-[1.01]'
                         }`}>
                         My bookings
                       </button>
                       <button
                         onClick={() => setActiveBookingTab('for-listings')}
-                        className={`flex-1 h-9 rounded-lg text-sm font-medium transition-colors ${
+                        className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all duration-300 transform ${
                           activeBookingTab === 'for-listings'
-                            ? 'bg-primary-600 text-white'
-                            : 'text-muted-foreground hover:bg-surface'
+                            ? 'bg-primary-600 text-white shadow-md scale-[1.02]'
+                            : 'text-muted-foreground hover:bg-surface hover:scale-[1.01]'
                         }`}>
                         For my listings
                       </button>
@@ -1146,18 +1200,22 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Listings */}
             <div
               ref={listingsRef}
-              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
+              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
               <button
                 onClick={() => toggleSection('listings')}
-                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
+                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]">
                 <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-5 h-5 transition-transform duration-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -1167,12 +1225,18 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                   </svg>
                   <h3 className="text-lg font-semibold text-foreground">Listings</h3>
                 </div>
-                <span className="text-muted-foreground text-xl transition-transform duration-200">
-                  {expandedSections.listings ? '▼' : '▶'}
+                <span
+                  className={`text-muted-foreground text-xl transition-transform duration-300 ${
+                    expandedSections.listings ? 'rotate-0' : '-rotate-90'
+                  }`}>
+                  ▼
                 </span>
               </button>
-              {expandedSections.listings && (
-                <div className="px-6 pb-6 pt-0 transition-all duration-300 ease-in-out">
+              <div
+                className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                  expandedSections.listings ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                <div className="px-6 pb-6 pt-0">
                   <div className="mt-4 overflow-x-auto">
                     <div className="mt-4 overflow-x-auto">
                       <table className="w-full text-sm">
@@ -1237,38 +1301,46 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                     )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Affiliate Code */}
             <div
               ref={affiliateRef}
-              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
+              className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden animate-in fade-in slide-in-from-bottom duration-500">
               <button
                 onClick={() => toggleSection('affiliate')}
-                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition">
+                className="w-full flex items-center justify-between p-6 hover:bg-surface-secondary transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]">
                 <div className="flex items-center gap-3">
-                  {getIcon('Affiliate Code')}
+                  <span className="transition-transform duration-300">
+                    {getIcon('Affiliate Code')}
+                  </span>
                   <h3 className="text-lg font-semibold text-foreground">Affiliate Code</h3>
                 </div>
-                <span className="text-muted-foreground text-xl transition-transform duration-200">
-                  {expandedSections.affiliate ? '▼' : '▶'}
+                <span
+                  className={`text-muted-foreground text-xl transition-transform duration-300 ${
+                    expandedSections.affiliate ? 'rotate-0' : '-rotate-90'
+                  }`}>
+                  ▼
                 </span>
               </button>
-              {expandedSections.affiliate && (
-                <div className="px-6 pb-6 pt-0 transition-all duration-300 ease-in-out">
+              <div
+                className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                  expandedSections.affiliate ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                <div className="px-6 pb-6 pt-0">
                   <div className="mt-4">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground animate-in fade-in duration-500">
                       Share this code with others to track referrals.
                     </p>
                     <div className="mt-4 flex items-center gap-3">
                       <input
                         value={affiliateCode}
                         readOnly
-                        className="flex-1 h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+                        className="flex-1 h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground transition-all duration-300 hover:border-primary-400"
                       />
                       <button
-                        className="h-11 w-11 rounded-xl border border-subtle bg-surface-secondary text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
+                        className="h-11 w-11 rounded-xl border border-subtle bg-surface-secondary text-muted-foreground transition-all duration-300 hover:text-foreground hover:border-primary-400 hover:bg-primary-50 flex items-center justify-center transform hover:scale-110 active:scale-95"
                         onClick={() => {
                           navigator.clipboard.writeText(affiliateCode);
                           toast.success('Affiliate code copied');
@@ -1288,7 +1360,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                         </svg>
                       </button>
                       <button
-                        className="h-11 w-11 rounded-xl border border-subtle bg-surface-secondary text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center"
+                        className="h-11 w-11 rounded-xl border border-subtle bg-surface-secondary text-muted-foreground transition-all duration-300 hover:text-foreground hover:border-primary-400 hover:bg-primary-50 flex items-center justify-center transform hover:scale-110 active:scale-95"
                         onClick={() => {
                           if (typeof navigator !== 'undefined' && navigator.clipboard) {
                             navigator.clipboard.writeText(
@@ -1319,10 +1391,10 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                         (platform) => (
                           <button
                             key={platform}
-                            className={`h-10 rounded-xl border border-subtle bg-surface-secondary text-foreground hover:border-primary-400 ${
+                            className={`h-10 rounded-xl border border-subtle bg-surface-secondary text-foreground transition-all duration-300 hover:border-primary-400 transform hover:scale-[1.05] active:scale-[0.95] ${
                               platform === 'Telegram'
-                                ? 'bg-primary-600 text-white border-primary-600'
-                                : ''
+                                ? 'bg-primary-600 text-white border-primary-600 hover:bg-primary-700'
+                                : 'hover:bg-primary-50'
                             }`}
                             onClick={() => handleShare(platform, affiliateCode)}>
                             {platform}
@@ -1332,35 +1404,37 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </main>
 
         {/* Права панель */}
-        <aside className="hidden lg:flex flex-col gap-6">
+        <aside className="hidden lg:flex flex-col gap-6 animate-in fade-in slide-in-from-right duration-500">
           {/* Referral Code */}
-          <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6">
+          <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 transition-all duration-300 hover:shadow-lg">
             <p className="text-sm text-muted-foreground mb-2">You already have a referral code:</p>
-            <p className="text-lg font-semibold text-foreground font-mono">{affiliateCode}</p>
+            <p className="text-lg font-semibold text-foreground font-mono transition-all duration-300">
+              {affiliateCode}
+            </p>
           </div>
 
           {/* Quick Actions */}
           <div
             ref={quickActionsRef}
-            className="rounded-3xl border border-subtle bg-surface shadow-md p-6">
+            className="rounded-3xl border border-subtle bg-surface shadow-md p-6 transition-all duration-300 hover:shadow-lg">
             <h3 className="text-lg font-semibold text-foreground mb-4">Quick actions</h3>
             <div>
               <p className="text-sm text-muted-foreground mb-2">Potential earnings</p>
               <select
                 value={earningsPeriod}
                 onChange={(e) => setEarningsPeriod(e.target.value as 'month' | 'quarter' | 'year')}
-                className="w-full h-10 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary-500">
+                className="w-full h-10 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm mb-3 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 hover:border-primary-400">
                 <option value="month">Month</option>
                 <option value="quarter">Quarter</option>
                 <option value="year">Year</option>
               </select>
-              <p className="text-3xl font-semibold text-foreground mb-1">
+              <p className="text-3xl font-semibold text-foreground mb-1 transition-all duration-500">
                 {currencyFormatter.format(earnings || 0)}
               </p>
               <p className="text-xs text-muted-foreground mb-3">
@@ -1371,10 +1445,10 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 {chartData.map((data, idx) => (
                   <div
                     key={`${data.name}-${idx}`}
-                    className="flex-1 bg-primary-600 rounded-t transition-all hover:bg-primary-500 group relative"
+                    className="flex-1 bg-primary-600 rounded-t transition-all duration-300 hover:bg-primary-500 hover:scale-105 group relative transform"
                     style={{ height: `${data.height}%` }}
                     title={`${data.name}: ${currencyFormatter.format(data.earnings)}`}>
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap pointer-events-none z-10">
                       {data.name}: {currencyFormatter.format(data.earnings)}
                     </div>
                   </div>
@@ -1384,19 +1458,19 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
             <div className="mt-4 flex gap-2">
               <Link
                 href={`/${locale}/listings`}
-                className="flex-1 h-10 rounded-xl border border-subtle bg-surface-secondary text-sm font-medium text-foreground hover:border-primary-400 text-center flex items-center justify-center">
+                className="flex-1 h-10 rounded-xl border border-subtle bg-surface-secondary text-sm font-medium text-foreground transition-all duration-300 hover:border-primary-400 hover:bg-primary-50 hover:text-primary-600 text-center flex items-center justify-center transform hover:scale-[1.02] active:scale-[0.98]">
                 Browse listings
               </Link>
               {isOwnProfile ? (
                 <Link
                   href={`/${locale}/my-listings`}
-                  className="flex-1 h-10 rounded-xl bg-primary-600 text-white text-xs font-medium shadow hover:bg-primary-700 flex items-center justify-center whitespace-nowrap px-2">
+                  className="flex-1 h-10 rounded-xl bg-primary-600 text-white text-xs font-medium shadow transition-all duration-300 hover:bg-primary-700 hover:shadow-lg flex items-center justify-center whitespace-nowrap px-2 transform hover:scale-[1.02] active:scale-[0.98]">
                   Manage my listings
                 </Link>
               ) : (
                 <Link
                   href={`/${locale}/how-it-works`}
-                  className="flex-1 h-10 rounded-xl bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700 flex items-center justify-center">
+                  className="flex-1 h-10 rounded-xl bg-primary-600 text-white text-sm font-medium shadow transition-all duration-300 hover:bg-primary-700 hover:shadow-lg flex items-center justify-center transform hover:scale-[1.02] active:scale-[0.98]">
                   Get started
                 </Link>
               )}
@@ -1404,21 +1478,22 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
           </div>
 
           {/* Upload Listing */}
-          <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6">
+          <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 transition-all duration-300 hover:shadow-lg">
             <p className="text-sm text-muted-foreground mb-4">Upload a listing to view data</p>
             <Link
               href={isOwnProfile ? `/${locale}/my-listings` : `/${locale}/how-it-works`}
-              className="w-full h-11 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 flex items-center justify-center mb-4">
+              className="w-full h-11 rounded-xl bg-primary-600 text-white font-semibold shadow transition-all duration-300 hover:bg-primary-700 hover:shadow-lg flex items-center justify-center mb-4 transform hover:scale-[1.02] active:scale-[0.98]">
               Upload first listing
             </Link>
             {listings.length > 0 ? (
               <div className="mt-4 space-y-2">
                 <p className="text-xs text-muted-foreground mb-2">Recent listings:</p>
-                {listings.slice(0, 3).map((listing) => (
+                {listings.slice(0, 3).map((listing, idx) => (
                   <Link
                     key={listing.id}
                     href={`/${locale}/listings/${listing.id}`}
-                    className="block p-2 rounded-lg bg-surface-secondary hover:bg-surface border border-subtle transition">
+                    className="block p-2 rounded-lg bg-surface-secondary border border-subtle transition-all duration-300 hover:bg-surface hover:border-primary-400 hover:shadow-md transform hover:scale-[1.02] animate-in fade-in slide-in-from-bottom"
+                    style={{ animationDelay: `${idx * 100}ms` }}>
                     <p className="text-xs font-medium text-foreground truncate">
                       {listing.title || 'Untitled Listing'}
                     </p>
@@ -1431,7 +1506,7 @@ export function ProfileContent({ userId, isGuest = false }: ProfileContentProps)
                 ))}
               </div>
             ) : (
-              <div className="mt-4 h-32 bg-surface-secondary rounded-xl flex items-center justify-center">
+              <div className="mt-4 h-32 bg-surface-secondary rounded-xl flex items-center justify-center animate-in fade-in duration-500">
                 <p className="text-xs text-muted-foreground text-center px-4">
                   No listings yet. Upload your first listing to see it here.
                 </p>

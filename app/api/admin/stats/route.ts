@@ -46,56 +46,87 @@ export async function GET() {
     const now = new Date();
     const weekStart = startOfWeek(now, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
-
-    const [
-      totalListings,
-      totalUsers,
-      pendingListings,
-      listingsThisWeek,
-      usersThisWeek,
-      allListings,
-      allUsers,
-    ] = await Promise.all([
-      prisma.listing.count(),
-      prisma.user.count(),
-      prisma.listing.count({ where: { status: 'PENDING_REVIEW' } }),
-      prisma.listing.count({
-        where: {
-          createdAt: {
-            gte: weekStart,
-            lte: weekEnd,
-          },
-        },
-      }),
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: weekStart,
-            lte: weekEnd,
-          },
-        },
-      }),
-      prisma.listing.findMany({
-        where: {
-          createdAt: {
-            gte: weekStart,
-            lte: weekEnd,
-          },
-        },
-        select: { createdAt: true },
-      }),
-      prisma.user.findMany({
-        where: {
-          createdAt: {
-            gte: weekStart,
-            lte: weekEnd,
-          },
-        },
-        select: { createdAt: true },
-      }),
-    ]);
-
     const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+    // Prisma Client автоматично керує підключеннями, тому не потрібно явно викликати $connect()
+
+    let totalListings = 0;
+    let totalUsers = 0;
+    let pendingListings = 0;
+    let listingsThisWeek = 0;
+    let usersThisWeek = 0;
+    let allListings: { createdAt: Date }[] = [];
+    let allUsers: { createdAt: Date }[] = [];
+
+    try {
+      [
+        totalListings,
+        totalUsers,
+        pendingListings,
+        listingsThisWeek,
+        usersThisWeek,
+        allListings,
+        allUsers,
+      ] = await Promise.all([
+        prisma.listing.count().catch(() => 0),
+        prisma.user.count().catch(() => 0),
+        prisma.listing.count({ where: { status: 'PENDING_REVIEW' } }).catch(() => 0),
+        prisma.listing.count({
+          where: {
+            createdAt: {
+              gte: weekStart,
+              lte: weekEnd,
+            },
+          },
+        }).catch(() => 0),
+        prisma.user.count({
+          where: {
+            createdAt: {
+              gte: weekStart,
+              lte: weekEnd,
+            },
+          },
+        }).catch(() => 0),
+        prisma.listing.findMany({
+          where: {
+            createdAt: {
+              gte: weekStart,
+              lte: weekEnd,
+            },
+          },
+          select: { createdAt: true },
+        }).catch(() => []),
+        prisma.user.findMany({
+          where: {
+            createdAt: {
+              gte: weekStart,
+              lte: weekEnd,
+            },
+          },
+          select: { createdAt: true },
+        }).catch(() => []),
+      ]);
+    } catch (queryError) {
+      console.error('Database query error:', queryError);
+      // Повертаємо порожні дані замість помилки
+      return NextResponse.json({
+        totalListings: 0,
+        totalUsers: 0,
+        pendingListings: 0,
+        listingsThisWeek: 0,
+        usersThisWeek: 0,
+        listingsByDay: days.map((day) => ({
+          date: format(day, 'dd.MM'),
+          count: 0,
+        })),
+        usersByDay: days.map((day) => ({
+          date: format(day, 'dd.MM'),
+          count: 0,
+        })),
+        error: 'Database query failed, returning empty data',
+      });
+    }
+
     const listingsByDay = days.map((day) => {
       const count = allListings.filter(
         (listing) => format(listing.createdAt, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'),

@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAdminStats, useAdminListings } from '@/hooks/useAdmin';
 import { TableRowsSkeleton } from '@/components/skeletons/TableRowsSkeleton';
 import { AdminSupportChat } from './AdminSupportChat';
+import { AdminHeader } from './AdminHeader';
 import { useToast } from '@/components/ui/ToastContainer';
 
 interface Listing {
@@ -74,7 +74,6 @@ interface IbanSubmission {
 }
 
 export function AdminDashboard() {
-  const router = useRouter();
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<'listings' | 'approvals' | 'support' | 'iban'>(
     'listings',
@@ -87,12 +86,46 @@ export function AdminDashboard() {
   const [showMoreFeatures, setShowMoreFeatures] = useState(false);
   const [ibanSubmissions, setIbanSubmissions] = useState<IbanSubmission[]>([]);
   const [ibanLoading, setIbanLoading] = useState(false);
-  const [expandedSections, setExpandedSections] = useState({
-    createForm: false,
-    filters: true,
-    listingsTable: true,
-    support: true,
+  // Зберігаємо стан розгорнутих секцій для кожної вкладки окремо
+  const [expandedSectionsByTab, setExpandedSectionsByTab] = useState<
+    Record<
+      string,
+      {
+        createForm: boolean;
+        filters: boolean;
+        listingsTable: boolean;
+        support: boolean;
+      }
+    >
+  >({
+    listings: {
+      createForm: false,
+      filters: true,
+      listingsTable: true,
+      support: true,
+    },
+    approvals: {
+      createForm: false,
+      filters: true,
+      listingsTable: true,
+      support: true,
+    },
+    support: {
+      createForm: false,
+      filters: true,
+      listingsTable: true,
+      support: true,
+    },
+    iban: {
+      createForm: false,
+      filters: true,
+      listingsTable: true,
+      support: true,
+    },
   });
+
+  // Отримуємо поточний стан секцій для активної вкладки
+  const expandedSections = expandedSectionsByTab[activeTab] || expandedSectionsByTab.listings;
 
   const [formData, setFormData] = useState({
     title: '',
@@ -107,7 +140,7 @@ export function AdminDashboard() {
   });
 
   // Використовуємо React Query для адмін даних
-  const { data: statsData, refetch: refetchStats } = useAdminStats();
+  const { data: statsData, refetch: refetchStats, isError: statsError } = useAdminStats();
   const {
     data: allListingsData,
     refetch: refetchAllListings,
@@ -123,8 +156,21 @@ export function AdminDashboard() {
 
   // Синхронізуємо дані з React Query
   useEffect(() => {
-    if (statsData) setStats(statsData as unknown as StatsData);
-  }, [statsData]);
+    if (statsData) {
+      setStats(statsData as unknown as StatsData);
+    } else if (statsError) {
+      // Встановлюємо порожні дані при помилці
+      setStats({
+        totalListings: 0,
+        totalUsers: 0,
+        pendingListings: 0,
+        listingsThisWeek: 0,
+        usersThisWeek: 0,
+        listingsByDay: [],
+        usersByDay: [],
+      });
+    }
+  }, [statsData, statsError]);
 
   // Завантажуємо IBAN submissions
   useEffect(() => {
@@ -267,10 +313,6 @@ export function AdminDashboard() {
     alert('Image upload flow not implemented in this demo.');
   };
 
-  const handleSignOut = () => {
-    router.push('/how-it-works?logout=true');
-  };
-
   const handleApproveAll = async () => {
     if (!pendingListings.length) return;
     const confirmAction = confirm('Approve all pending listings?');
@@ -306,55 +348,6 @@ export function AdminDashboard() {
       });
   }, [allListings, filters]);
 
-  const renderTabs = () => (
-    <div className="flex gap-2 border border-subtle rounded-2xl bg-surface-secondary p-1 w-fit">
-      {[
-        { key: 'listings', label: 'Listings' },
-        { key: 'approvals', label: 'Approvals' },
-        { key: 'support', label: 'Support' },
-        { key: 'iban', label: 'IBAN' },
-      ].map(({ key, label }) => (
-        <button
-          key={key}
-          onClick={() => setActiveTab(key as typeof activeTab)}
-          className={`px-5 py-2 rounded-xl text-sm font-medium transition ${
-            activeTab === key
-              ? 'bg-primary-600 text-white shadow'
-              : 'text-muted-foreground hover:bg-surface'
-          }`}>
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-
-  const renderSummary = () => {
-    const getTotal = () => {
-      if (activeTab === 'approvals') return pendingListings.length;
-      if (activeTab === 'support') return supportConversationsMock.length;
-      if (activeTab === 'iban') return ibanSubmissions.length;
-      return stats?.totalListings ?? 0;
-    };
-
-    return (
-      <div className="flex items-center gap-4 justify-between min-h-[44px]">
-        <div className="text-muted-foreground text-sm whitespace-nowrap">Total: {getTotal()}</div>
-        <div className="flex gap-3 flex-shrink-0">
-          <button
-            onClick={refreshData}
-            className="h-10 px-4 rounded-xl border border-subtle bg-surface-secondary text-sm text-foreground hover:border-primary-400 whitespace-nowrap">
-            Refresh
-          </button>
-          <button
-            onClick={handleSignOut}
-            className="h-10 px-4 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 whitespace-nowrap">
-            Sign out
-          </button>
-        </div>
-      </div>
-    );
-  };
-
   const renderFeatureChip = (feature: string, idx: number) => {
     const active = formData.features.includes(feature);
     const hidden = idx >= 6 && !showMoreFeatures;
@@ -382,153 +375,181 @@ export function AdminDashboard() {
   };
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
+    setExpandedSectionsByTab((prev) => {
+      const currentTabState = prev[activeTab] || {
+        createForm: false,
+        filters: true,
+        listingsTable: true,
+        support: true,
+      };
+      return {
+        ...prev,
+        [activeTab]: {
+          ...currentTabState,
+          [section]: !currentTabState[section],
+        },
+      };
+    });
   };
 
   const renderCreateForm = () => (
-    <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
-      <div className="bg-surface-secondary px-6 py-4 border-b border-subtle">
+    <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative">
+      <div className="bg-surface-secondary px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-subtle">
         <button
           onClick={() => toggleSection('createForm')}
           className="w-full flex items-center justify-between text-left">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <span className="text-primary-400 text-xl">＋</span> Create New Self-Storage Listing
+          <h2 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+            <span className="text-primary-400 text-lg sm:text-xl">＋</span>
+            <span className="hidden sm:inline">Create New Self-Storage Listing</span>
+            <span className="sm:hidden">Create Listing</span>
           </h2>
-          <span className="text-muted-foreground text-xl transition-transform duration-200">
+          <span className="text-muted-foreground text-lg sm:text-xl transition-transform duration-200 flex-shrink-0">
             {expandedSections.createForm ? '▼' : '▶'}
           </span>
         </button>
       </div>
-      {expandedSections.createForm && (
-        <div className="p-6 grid lg:grid-cols-[1.2fr,1fr] gap-6 transition-all duration-300 ease-in-out">
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          expandedSections.createForm ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+        <div className="p-4 sm:p-6 md:p-8 grid grid-cols-1 lg:grid-cols-[minmax(0,1.2fr),minmax(280px,1fr)] gap-4 sm:gap-6 md:gap-8 w-full max-w-full">
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Title</label>
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">Title</label>
               <input
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="Indoor Self-Storage Unit"
-                className="mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+                className="mt-1 w-full h-10 sm:h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Subtitle</label>
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">
+                Subtitle
+              </label>
               <input
                 value={formData.subtitle}
                 onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
                 placeholder="Short description (e.g. climate controlled)"
-                className="mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+                className="mt-1 w-full h-10 sm:h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
               />
             </div>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Price/month (€)</label>
+                <label className="text-xs sm:text-sm font-medium text-muted-foreground">
+                  Price/month (€)
+                </label>
                 <input
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                   placeholder="1200"
-                  className="mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+                  className="mt-1 w-full h-10 sm:h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Size (m²)</label>
+                <label className="text-xs sm:text-sm font-medium text-muted-foreground">
+                  Size (m²)
+                </label>
                 <input
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
                   placeholder="10"
-                  className="mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+                  className="mt-1 w-full h-10 sm:h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Image URL</label>
+              <div className="sm:col-span-2 md:col-span-1">
+                <label className="text-xs sm:text-sm font-medium text-muted-foreground">
+                  Image URL
+                </label>
                 <input
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                   placeholder="https://..."
-                  className="mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+                  className="mt-1 w-full h-10 sm:h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
                 />
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Address</label>
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">
+                Address
+              </label>
               <input
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="123 Main St, City"
-                className="mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+                className="mt-1 w-full h-10 sm:h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Features</label>
+              <label className="text-xs sm:text-sm font-medium text-muted-foreground">
+                Features
+              </label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {featurePresets.map(renderFeatureChip)}
                 <button
                   type="button"
                   onClick={toggleFeatureList}
-                  className="px-3 py-1.5 rounded-xl text-sm border border-subtle bg-surface-secondary text-muted-foreground hover:border-primary-400">
+                  className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm border border-subtle bg-surface-secondary text-muted-foreground hover:border-primary-400">
                   {showMoreFeatures ? 'Show less' : 'See more'}
                 </button>
               </div>
             </div>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Lat</label>
+                <label className="text-xs sm:text-sm font-medium text-muted-foreground">Lat</label>
                 <input
                   value={formData.latitude}
                   onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
                   placeholder="Lat"
-                  className="mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+                  className="mt-1 w-full h-10 sm:h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Lng</label>
+                <label className="text-xs sm:text-sm font-medium text-muted-foreground">Lng</label>
                 <input
                   value={formData.longitude}
                   onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                   placeholder="Lng"
-                  className="mt-1 w-full h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+                  className="mt-1 w-full h-10 sm:h-11 px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
                 />
               </div>
-              <div className="flex items-end">
+              <div className="sm:col-span-2 md:col-span-1 flex items-end">
                 <button
                   type="button"
                   onClick={handleCreateListing}
                   disabled={createLoading}
-                  className="w-full h-11 rounded-xl bg-primary-600 text-white font-semibold shadow hover:bg-primary-700 disabled:opacity-60">
+                  className="w-full h-10 sm:h-11 rounded-xl bg-primary-600 text-white text-sm sm:font-semibold shadow hover:bg-primary-700 disabled:opacity-60">
                   {createLoading ? 'Saving...' : 'Add'}
                 </button>
               </div>
             </div>
           </div>
-          <div className="rounded-2xl border border-dashed border-subtle bg-surface-secondary p-6 flex flex-col gap-4 items-center justify-center text-sm text-muted-foreground">
-            <div className="h-32 w-32 bg-surface rounded-xl border border-subtle flex items-center justify-center">
+          <div className="rounded-2xl border border-dashed border-subtle bg-surface-secondary p-4 sm:p-6 flex flex-col gap-3 sm:gap-4 items-center justify-center text-xs sm:text-sm text-muted-foreground">
+            <div className="h-24 w-24 sm:h-32 sm:w-32 bg-surface rounded-xl border border-subtle flex items-center justify-center">
               {formData.imageUrl ? (
                 <Image
                   src={formData.imageUrl}
                   alt="Preview"
                   width={120}
                   height={120}
-                  className="rounded-xl object-cover"
+                  className="rounded-xl object-cover w-full h-full"
                 />
               ) : (
-                <span>No preview</span>
+                <span className="text-xs">No preview</span>
               )}
             </div>
-            <p className="text-center">
+            <p className="text-center px-2">
               Drag & Drop or provide an image URL to showcase the listing.
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <button
-                className="h-10 px-4 rounded-xl bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl bg-primary-600 text-white text-xs sm:text-sm font-medium shadow hover:bg-primary-700 w-full sm:w-auto"
                 onClick={handleUploadClick}>
                 Upload
               </button>
               <button
                 type="button"
-                className="h-10 px-4 rounded-xl border border-subtle bg-surface text-sm text-foreground"
+                className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-subtle bg-surface text-xs sm:text-sm text-foreground w-full sm:w-auto"
                 onClick={() =>
                   navigator.clipboard
                     .readText()
@@ -539,59 +560,66 @@ export function AdminDashboard() {
             </div>
           </div>
         </div>
-      )}
+      </div>
     </section>
   );
 
   const renderFilters = (showCategory = true) => (
-    <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
-      <div className="bg-surface-secondary px-6 py-4 border-b border-subtle flex items-center justify-between">
+    <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative">
+      <div className="bg-surface-secondary px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-subtle flex items-center justify-between gap-2">
         <button
           onClick={() => toggleSection('filters')}
-          className="flex items-center gap-2 flex-1 text-left">
-          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <span className="text-primary-400 text-xl">⚙</span> Filters & Sorting
+          className="flex items-center gap-2 flex-1 text-left min-w-0">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+            <span className="text-primary-400 text-lg sm:text-xl">⚙</span>
+            <span className="hidden sm:inline">Filters & Sorting</span>
+            <span className="sm:hidden">Filters</span>
           </h3>
-          <span className="text-muted-foreground text-xl transition-transform duration-200 ml-auto">
+          <span className="text-muted-foreground text-lg sm:text-xl transition-transform duration-200 ml-auto flex-shrink-0">
             {expandedSections.filters ? '▼' : '▶'}
           </span>
         </button>
         {expandedSections.filters && (
           <button
-            className="text-sm text-primary-500 hover:text-primary-600"
+            className="text-xs sm:text-sm text-primary-500 hover:text-primary-600 whitespace-nowrap flex-shrink-0"
             onClick={() => setFilters({ search: '', order: 'desc', category: 'all' })}>
-            Clear Filters
+            Clear
           </button>
         )}
       </div>
-      {expandedSections.filters && (
-        <div className="p-6 grid md:grid-cols-5 gap-4 text-sm transition-all duration-300 ease-in-out">
-          <div className="md:col-span-2">
-            <label className="text-xs uppercase tracking-widest text-muted-foreground">
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          expandedSections.filters ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+        }`}>
+        <div className="p-4 sm:p-6 md:p-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6 text-xs sm:text-sm w-full max-w-full">
+          <div className="sm:col-span-2 md:col-span-2 lg:col-span-2">
+            <label className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">
               Search
             </label>
             <input
               value={filters.search}
               onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
               placeholder="Title, address, features..."
-              className="mt-2 h-11 w-full px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+              className="mt-1 sm:mt-2 h-9 sm:h-10 md:h-11 w-full px-2 sm:px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-xs sm:text-sm"
             />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-widest text-muted-foreground">
+            <label className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">
               Sort by
             </label>
             <select
-              className="mt-2 h-11 w-full px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+              className="mt-1 sm:mt-2 h-9 sm:h-10 md:h-11 w-full px-2 sm:px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-xs sm:text-sm"
               value="Created Date"
               disabled>
               <option>Created Date</option>
             </select>
           </div>
           <div>
-            <label className="text-xs uppercase tracking-widest text-muted-foreground">Order</label>
+            <label className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">
+              Order
+            </label>
             <select
-              className="mt-2 h-11 w-full px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+              className="mt-1 sm:mt-2 h-9 sm:h-10 md:h-11 w-full px-2 sm:px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-xs sm:text-sm"
               value={filters.order}
               onChange={(e) => setFilters((prev) => ({ ...prev, order: e.target.value }))}>
               <option value="desc">Newest first</option>
@@ -600,11 +628,11 @@ export function AdminDashboard() {
           </div>
           {showCategory && (
             <div>
-              <label className="text-xs uppercase tracking-widest text-muted-foreground">
+              <label className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground">
                 Category
               </label>
               <select
-                className="mt-2 h-11 w-full px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground"
+                className="mt-1 sm:mt-2 h-9 sm:h-10 md:h-11 w-full px-2 sm:px-3 rounded-xl border border-subtle bg-surface-secondary text-foreground text-xs sm:text-sm"
                 value={filters.category}
                 onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))}>
                 <option value="all">All</option>
@@ -616,21 +644,21 @@ export function AdminDashboard() {
             </div>
           )}
         </div>
-      )}
+      </div>
     </section>
   );
 
   const renderListingsTable = (list: Listing[], showActions = false, isLoading = false) => {
     const tableContent = isLoading ? (
-      <table className="w-full text-sm">
+      <table className="w-full text-xs sm:text-sm">
         <thead className="bg-surface-secondary border-b border-subtle text-muted-foreground">
           <tr>
-            <th className="p-4 text-left">Title</th>
-            <th className="p-4 text-left">Price/month</th>
-            <th className="p-4 text-left">Size</th>
-            <th className="p-4 text-left">Owner</th>
-            <th className="p-4 text-left">Status</th>
-            {showActions && <th className="p-4 text-left">Actions</th>}
+            <th className="p-2 sm:p-3 md:p-4 text-left">Title</th>
+            <th className="p-2 sm:p-3 md:p-4 text-left hidden sm:table-cell">Price/month</th>
+            <th className="p-2 sm:p-3 md:p-4 text-left hidden md:table-cell">Size</th>
+            <th className="p-2 sm:p-3 md:p-4 text-left hidden lg:table-cell">Owner</th>
+            <th className="p-2 sm:p-3 md:p-4 text-left">Status</th>
+            {showActions && <th className="p-2 sm:p-3 md:p-4 text-left">Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -638,31 +666,33 @@ export function AdminDashboard() {
         </tbody>
       </table>
     ) : (
-      <table className="w-full text-sm">
+      <table className="w-full text-xs sm:text-sm">
         <thead className="bg-surface-secondary border-b border-subtle text-muted-foreground">
           <tr>
-            <th className="p-4 text-left">Title</th>
-            <th className="p-4 text-left">Price/month</th>
-            <th className="p-4 text-left">Size</th>
-            <th className="p-4 text-left">Owner</th>
-            <th className="p-4 text-left">Status</th>
-            {showActions && <th className="p-4 text-left">Actions</th>}
+            <th className="p-2 sm:p-3 md:p-4 text-left">Title</th>
+            <th className="p-2 sm:p-3 md:p-4 text-left hidden sm:table-cell">Price/month</th>
+            <th className="p-2 sm:p-3 md:p-4 text-left hidden md:table-cell">Size</th>
+            <th className="p-2 sm:p-3 md:p-4 text-left hidden lg:table-cell">Owner</th>
+            <th className="p-2 sm:p-3 md:p-4 text-left">Status</th>
+            {showActions && <th className="p-2 sm:p-3 md:p-4 text-left">Actions</th>}
           </tr>
         </thead>
         <tbody>
           {list.length === 0 ? (
             <tr>
-              <td colSpan={showActions ? 6 : 5} className="p-6 text-center text-muted-foreground">
+              <td
+                colSpan={showActions ? 6 : 5}
+                className="p-4 sm:p-6 text-center text-muted-foreground text-xs sm:text-sm">
                 No listings found.
               </td>
             </tr>
           ) : (
             list.map((item) => (
               <tr key={item.id} className="border-b border-subtle/60 last:border-none">
-                <td className="p-4">
-                  <div className="flex items-center gap-3">
+                <td className="p-2 sm:p-3 md:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     {item.images && item.images.length > 0 && item.images[0] ? (
-                      <div className="relative h-10 w-10 rounded-lg overflow-hidden flex-shrink-0 border border-subtle">
+                      <div className="relative h-8 w-8 sm:h-10 sm:w-10 rounded-lg overflow-hidden flex-shrink-0 border border-subtle">
                         <Image
                           src={item.images[0]}
                           alt={item.title}
@@ -672,32 +702,43 @@ export function AdminDashboard() {
                         />
                       </div>
                     ) : (
-                      <div className="h-10 w-10 rounded-lg bg-surface-secondary border border-subtle flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground">No img</span>
+                      <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-surface-secondary border border-subtle flex items-center justify-center">
+                        <span className="text-[10px] sm:text-xs text-muted-foreground">No img</span>
                       </div>
                     )}
-                    <div>
+                    <div className="min-w-0">
                       <Link
                         href={`/listings/${item.id}`}
-                        className="font-medium text-foreground hover:text-primary-500">
+                        className="font-medium text-foreground hover:text-primary-500 text-xs sm:text-sm truncate block">
                         {item.title}
                       </Link>
-                      <p className="text-xs text-muted-foreground">{item.address}</p>
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                        {item.address}
+                      </p>
+                      <div className="sm:hidden mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          {item.price ? `${item.price.toLocaleString()} ${item.currency}` : '--'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </td>
-                <td className="p-4 text-muted-foreground">
-                  {item.price ? `${item.price.toLocaleString()} ${item.currency}` : '--'}
+                <td className="p-2 sm:p-3 md:p-4 text-muted-foreground hidden sm:table-cell">
+                  <span className="text-xs sm:text-sm">
+                    {item.price ? `${item.price.toLocaleString()} ${item.currency}` : '--'}
+                  </span>
                 </td>
-                <td className="p-4 text-muted-foreground">
-                  {item.area ? `${item.area} m²` : '--'}
+                <td className="p-2 sm:p-3 md:p-4 text-muted-foreground hidden md:table-cell">
+                  <span className="text-xs sm:text-sm">{item.area ? `${item.area} m²` : '--'}</span>
                 </td>
-                <td className="p-4 text-muted-foreground">
-                  {item.owner?.name || item.owner?.email || '—'}
+                <td className="p-2 sm:p-3 md:p-4 text-muted-foreground hidden lg:table-cell">
+                  <span className="text-xs sm:text-sm truncate block">
+                    {item.owner?.name || item.owner?.email || '—'}
+                  </span>
                 </td>
-                <td className="p-4">
+                <td className="p-2 sm:p-3 md:p-4">
                   <span
-                    className={`px-3 py-1 text-xs rounded-full ${
+                    className={`px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs rounded-full whitespace-nowrap ${
                       item.status === 'PUBLISHED'
                         ? 'bg-emerald-500/20 text-emerald-400'
                         : item.status === 'PENDING_REVIEW'
@@ -708,15 +749,15 @@ export function AdminDashboard() {
                   </span>
                 </td>
                 {showActions && (
-                  <td className="p-4">
-                    <div className="flex gap-2">
+                  <td className="p-2 sm:p-3 md:p-4">
+                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                       <button
-                        className="h-9 px-4 rounded-xl bg-primary-600 text-white text-xs font-medium hover:bg-primary-700"
+                        className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl bg-primary-600 text-white text-[10px] sm:text-xs font-medium hover:bg-primary-700 whitespace-nowrap"
                         onClick={() => handleApproveListing(item.id)}>
                         Approve
                       </button>
                       <button
-                        className="h-9 px-4 rounded-xl border border-subtle bg-surface-secondary text-xs font-medium text-muted-foreground hover:border-primary-400"
+                        className="h-8 sm:h-9 px-2 sm:px-4 rounded-xl border border-subtle bg-surface-secondary text-[10px] sm:text-xs font-medium text-muted-foreground hover:border-primary-400 whitespace-nowrap"
                         onClick={() => handleReject(item.id)}>
                         Reject
                       </button>
@@ -731,8 +772,8 @@ export function AdminDashboard() {
     );
 
     return (
-      <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
-        <div className="bg-surface-secondary px-6 py-4 border-b border-subtle">
+      <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto">
+        <div className="bg-surface-secondary px-8 py-5 border-b border-subtle">
           <button
             onClick={() => toggleSection('listingsTable')}
             className="w-full flex items-center justify-between text-left">
@@ -748,7 +789,9 @@ export function AdminDashboard() {
           </button>
         </div>
         {expandedSections.listingsTable && (
-          <div className="transition-all duration-300 ease-in-out">{tableContent}</div>
+          <div className="transition-all duration-300 ease-in-out w-full max-w-full overflow-x-auto">
+            <div className="min-w-0">{tableContent}</div>
+          </div>
         )}
       </section>
     );
@@ -756,15 +799,17 @@ export function AdminDashboard() {
 
   const renderSupport = () => {
     return (
-      <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden">
-        <div className="bg-surface-secondary px-6 py-4 border-b border-subtle">
+      <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative">
+        <div className="bg-surface-secondary px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-subtle">
           <button
             onClick={() => toggleSection('support')}
             className="flex items-center gap-2 flex-1 text-left w-full">
-            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <span className="text-primary-400 text-xl">💬</span> Support Chat
+            <h3 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+              <span className="text-primary-400 text-lg sm:text-xl">💬</span>
+              <span className="hidden sm:inline">Support Chat</span>
+              <span className="sm:hidden">Support</span>
             </h3>
-            <span className="text-muted-foreground text-xl transition-transform duration-200 ml-auto">
+            <span className="text-muted-foreground text-lg sm:text-xl transition-transform duration-200 ml-auto flex-shrink-0">
               {expandedSections.support !== undefined
                 ? expandedSections.support
                   ? '▼'
@@ -773,11 +818,16 @@ export function AdminDashboard() {
             </span>
           </button>
         </div>
-        {(expandedSections.support !== undefined ? expandedSections.support : true) && (
-          <div className="transition-all duration-300 ease-in-out">
+        <div
+          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+            (expandedSections.support !== undefined ? expandedSections.support : true)
+              ? 'max-h-[5000px] opacity-100'
+              : 'max-h-0 opacity-0'
+          }`}>
+          <div className="w-full max-w-full">
             <AdminSupportChat />
           </div>
-        )}
+        </div>
       </section>
     );
   };
@@ -825,7 +875,7 @@ export function AdminDashboard() {
   };
 
   const renderIban = () => (
-    <div className="rounded-3xl border border-subtle bg-surface shadow-md p-6 space-y-6">
+    <div className="rounded-3xl border border-subtle bg-surface shadow-md p-8 space-y-6 w-full max-w-full mx-auto">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">IBAN Submissions</h3>
         <button
@@ -879,20 +929,26 @@ export function AdminDashboard() {
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs sm:text-sm">
                 <thead className="bg-surface border-b border-subtle">
                   <tr>
-                    <th className="p-3 text-left text-muted-foreground">Email</th>
-                    <th className="p-3 text-left text-muted-foreground">IBAN</th>
-                    <th className="p-3 text-left text-muted-foreground">Created At</th>
+                    <th className="p-2 sm:p-3 text-left text-muted-foreground">Email</th>
+                    <th className="p-2 sm:p-3 text-left text-muted-foreground hidden sm:table-cell">
+                      IBAN
+                    </th>
+                    <th className="p-2 sm:p-3 text-left text-muted-foreground">Created At</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ibanSubmissions.map((submission: IbanSubmission) => (
                     <tr key={submission.id} className="border-b border-subtle/60 last:border-none">
-                      <td className="p-3 text-foreground">{submission.email}</td>
-                      <td className="p-3 text-foreground font-mono text-xs">{submission.iban}</td>
-                      <td className="p-3 text-muted-foreground">
+                      <td className="p-2 sm:p-3 text-foreground text-xs sm:text-sm break-all">
+                        {submission.email}
+                      </td>
+                      <td className="p-2 sm:p-3 text-foreground font-mono text-[10px] sm:text-xs hidden sm:table-cell break-all">
+                        {submission.iban}
+                      </td>
+                      <td className="p-2 sm:p-3 text-muted-foreground text-xs sm:text-sm">
                         {new Date(submission.createdAt).toLocaleString()}
                       </td>
                     </tr>
@@ -907,56 +963,61 @@ export function AdminDashboard() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto py-10 text-foreground">
+    <div className="max-w-[95rem] mx-auto text-foreground">
       {/* Fixed Header */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-subtle pb-4 mb-6 -mx-4 px-4 pt-4">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <h1 className="text-3xl font-bold whitespace-nowrap">Admin Dashboard</h1>
-          <div className="flex-shrink-0">{renderTabs()}</div>
-        </div>
-        {renderSummary()}
-      </div>
+      <AdminHeader
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        totalListings={stats?.totalListings ?? 0}
+        totalApprovals={pendingListings.length}
+        totalSupport={supportConversationsMock.length}
+        totalIban={ibanSubmissions.length}
+        onRefresh={refreshData}
+      />
 
-      <div className="space-y-8">
-        {activeTab === 'listings' && (
-          <>
-            {renderCreateForm()}
-            {renderFilters()}
-            {allListingsError && (
-              <div className="rounded-3xl border border-red-500/50 bg-red-500/10 p-4 text-red-400">
-                <p className="font-semibold">Помилка завантаження listings:</p>
-                <p className="text-sm mt-1">
-                  {allListingsErrorDetails?.message || 'Невідома помилка'}
-                </p>
+      {/* Content with padding */}
+      <div className="px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6">
+        <div className="space-y-8 w-full max-w-full mx-auto">
+          {activeTab === 'listings' && (
+            <>
+              {renderCreateForm()}
+              {renderFilters()}
+              {allListingsError && (
+                <div className="rounded-3xl border border-red-500/50 bg-red-500/10 p-4 text-red-400">
+                  <p className="font-semibold">Помилка завантаження listings:</p>
+                  <p className="text-sm mt-1">
+                    {allListingsErrorDetails?.message || 'Невідома помилка'}
+                  </p>
+                  <button
+                    onClick={() => refetchAllListings()}
+                    className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
+                    Спробувати ще раз
+                  </button>
+                </div>
+              )}
+              {renderListingsTable(filteredListings, false, allListingsLoading)}
+            </>
+          )}
+
+          {activeTab === 'approvals' && (
+            <>
+              {renderFilters(false)}
+              <div className="flex justify-end -mt-4 mb-4">
                 <button
-                  onClick={() => refetchAllListings()}
-                  className="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
-                  Спробувати ще раз
+                  onClick={handleApproveAll}
+                  disabled={!pendingListings.length}
+                  className="h-10 px-4 rounded-xl bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700 disabled:opacity-50">
+                  Approve all pending
                 </button>
               </div>
-            )}
-            {renderListingsTable(filteredListings, false, allListingsLoading)}
-          </>
-        )}
+              {renderListingsTable(pendingListings, true, pendingListingsLoading)}
+            </>
+          )}
 
-        {activeTab === 'approvals' && (
-          <>
-            {renderFilters(false)}
-            <div className="flex justify-end -mt-4 mb-4">
-              <button
-                onClick={handleApproveAll}
-                disabled={!pendingListings.length}
-                className="h-10 px-4 rounded-xl bg-primary-600 text-white text-sm font-medium shadow hover:bg-primary-700 disabled:opacity-50">
-                Approve all pending
-              </button>
-            </div>
-            {renderListingsTable(pendingListings, true, pendingListingsLoading)}
-          </>
-        )}
+          {activeTab === 'support' && renderSupport()}
 
-        {activeTab === 'support' && renderSupport()}
-
-        {activeTab === 'iban' && renderIban()}
+          {activeTab === 'iban' && renderIban()}
+        </div>
       </div>
     </div>
   );

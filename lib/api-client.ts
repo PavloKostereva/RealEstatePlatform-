@@ -111,8 +111,35 @@ export const savedApi = {
 
 export const adminApi = {
   getStats: async (): Promise<Record<string, unknown>> => {
-    const { data } = await apiClient.get<Record<string, unknown>>('/api/admin/stats');
-    return data;
+    try {
+      const { data } = await apiClient.get<Record<string, unknown>>('/api/admin/stats');
+      // Якщо є помилка в даних, але дані все ж таки повернулися (fallback)
+      if (data.error && data.totalListings === 0) {
+        console.warn('Stats API returned error, using fallback data:', data.error);
+        return {
+          totalListings: 0,
+          totalUsers: 0,
+          pendingListings: 0,
+          listingsThisWeek: 0,
+          usersThisWeek: 0,
+          listingsByDay: [],
+          usersByDay: [],
+        };
+      }
+      return data;
+    } catch (error) {
+      console.error('Error fetching admin stats:', error);
+      // Повертаємо порожні дані замість викидання помилки
+      return {
+        totalListings: 0,
+        totalUsers: 0,
+        pendingListings: 0,
+        listingsThisWeek: 0,
+        usersThisWeek: 0,
+        listingsByDay: [],
+        usersByDay: [],
+      };
+    }
   },
 
   getAdminListings: async (status?: string): Promise<Listing[]> => {

@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   />
                 </svg>
               </div>
-              
+
               <div className="space-y-2">
                 <h2 className="text-2xl font-bold text-foreground">Щось пішло не так</h2>
                 <p className="text-muted-foreground">
@@ -90,4 +90,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
