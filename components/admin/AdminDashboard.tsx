@@ -86,6 +86,11 @@ export function AdminDashboard() {
   const [showMoreFeatures, setShowMoreFeatures] = useState(false);
   const [ibanSubmissions, setIbanSubmissions] = useState<IbanSubmission[]>([]);
   const [ibanLoading, setIbanLoading] = useState(false);
+  const [ibanFilters, setIbanFilters] = useState({
+    search: '',
+    fromDate: '',
+    toDate: '',
+  });
   // Зберігаємо стан розгорнутих секцій для кожної вкладки окремо
   const [expandedSectionsByTab, setExpandedSectionsByTab] = useState<
     Record<
@@ -828,8 +833,41 @@ export function AdminDashboard() {
     );
   };
 
+  const filteredIbanSubmissions = useMemo(() => {
+    return ibanSubmissions.filter((submission) => {
+      if (ibanFilters.search) {
+        const searchLower = ibanFilters.search.toLowerCase();
+        const matchesSearch =
+          submission.email.toLowerCase().includes(searchLower) ||
+          submission.iban.toLowerCase().includes(searchLower);
+        if (!matchesSearch) return false;
+      }
+
+      if (ibanFilters.fromDate) {
+        const fromDate = new Date(ibanFilters.fromDate);
+        fromDate.setHours(0, 0, 0, 0);
+        const submissionDate = new Date(submission.createdAt);
+        submissionDate.setHours(0, 0, 0, 0);
+        if (submissionDate < fromDate) return false;
+      }
+
+      // Фільтр по даті "до"
+      if (ibanFilters.toDate) {
+        const toDate = new Date(ibanFilters.toDate);
+        toDate.setHours(23, 59, 59, 999);
+        const submissionDate = new Date(submission.createdAt);
+        if (submissionDate > toDate) return false;
+      }
+
+      return true;
+    });
+  }, [ibanSubmissions, ibanFilters]);
+
   const exportIbanToCSV = () => {
-    if (ibanSubmissions.length === 0) {
+    const dataToExport =
+      filteredIbanSubmissions.length > 0 ? filteredIbanSubmissions : ibanSubmissions;
+
+    if (dataToExport.length === 0) {
       toast.error('No IBAN submissions to export');
       return;
     }
@@ -838,7 +876,7 @@ export function AdminDashboard() {
 
     const csvRows = [
       headers.join(','),
-      ...ibanSubmissions.map((submission) => {
+      ...dataToExport.map((submission) => {
         return [
           submission.id,
           `"${submission.email}"`,
@@ -865,7 +903,11 @@ export function AdminDashboard() {
     link.click();
     document.body.removeChild(link);
 
-    toast.success('IBAN submissions exported successfully');
+    toast.success(
+      `Exported ${dataToExport.length} IBAN submission${
+        dataToExport.length !== 1 ? 's' : ''
+      } to CSV`,
+    );
   };
 
   const renderIban = () => (
@@ -885,38 +927,65 @@ export function AdminDashboard() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 text-sm">
         <input
+          type="text"
+          value={ibanFilters.search}
+          onChange={(e) => setIbanFilters((prev) => ({ ...prev, search: e.target.value }))}
           placeholder="Email, IBAN..."
-          className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
+          className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
         <input
+          type="date"
+          value={ibanFilters.fromDate}
+          onChange={(e) => setIbanFilters((prev) => ({ ...prev, fromDate: e.target.value }))}
           placeholder="From date"
-          className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
+          className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 [color-scheme:dark]"
         />
         <input
+          type="date"
+          value={ibanFilters.toDate}
+          onChange={(e) => setIbanFilters((prev) => ({ ...prev, toDate: e.target.value }))}
           placeholder="To date"
-          className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm"
+          className="h-11 sm:h-12 px-4 sm:px-5 rounded-xl border border-subtle bg-surface-secondary text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 [color-scheme:dark]"
         />
       </div>
+      {(ibanFilters.search || ibanFilters.fromDate || ibanFilters.toDate) && (
+        <div className="flex justify-end">
+          <button
+            onClick={() => setIbanFilters({ search: '', fromDate: '', toDate: '' })}
+            className="text-sm text-primary-500 hover:text-primary-600 font-medium">
+            Clear filters
+          </button>
+        </div>
+      )}
       <div className="rounded-2xl border border-subtle bg-surface-secondary p-6 sm:p-8 md:p-10">
         {ibanLoading ? (
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
           </div>
-        ) : ibanSubmissions.length === 0 ? (
+        ) : filteredIbanSubmissions.length === 0 ? (
           <div className="text-center text-muted-foreground py-8 sm:py-12">
-            <p className="mb-6 text-base sm:text-lg">No IBAN submissions found</p>
-            <button
-              className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl border border-subtle bg-surface text-sm sm:text-base text-foreground hover:border-primary-400 font-medium"
-              onClick={exportIbanToCSV}
-              disabled>
-              Export CSV
-            </button>
+            <p className="mb-6 text-base sm:text-lg">
+              {ibanSubmissions.length === 0
+                ? 'No IBAN submissions found'
+                : 'No submissions match the current filters'}
+            </p>
+            {ibanSubmissions.length > 0 && (
+              <button
+                className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl bg-primary-600 text-white text-sm sm:text-base font-medium hover:bg-primary-700 whitespace-nowrap"
+                onClick={exportIbanToCSV}>
+                Export All CSV
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <p className="text-foreground font-semibold text-base sm:text-lg">
-                Found {ibanSubmissions.length} submission{ibanSubmissions.length !== 1 ? 's' : ''}
+                Found {filteredIbanSubmissions.length} submission
+                {filteredIbanSubmissions.length !== 1 ? 's' : ''}
+                {ibanFilters.search || ibanFilters.fromDate || ibanFilters.toDate
+                  ? ` (filtered from ${ibanSubmissions.length} total)`
+                  : ''}
               </p>
               <button
                 className="h-11 sm:h-12 px-6 sm:px-8 rounded-xl bg-primary-600 text-white text-sm sm:text-base font-medium hover:bg-primary-700 whitespace-nowrap"
@@ -940,7 +1009,7 @@ export function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ibanSubmissions.map((submission: IbanSubmission) => (
+                  {filteredIbanSubmissions.map((submission: IbanSubmission) => (
                     <tr
                       key={submission.id}
                       className="border-b border-subtle/60 last:border-none hover:bg-surface-secondary/50 transition-colors">
