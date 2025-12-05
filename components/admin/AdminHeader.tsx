@@ -60,14 +60,14 @@ export function AdminHeader({
   return (
     <div className="sticky top-0 z-50 bg-background border-b border-subtle shadow-sm">
       <div className="px-3 sm:px-4 md:px-6 pt-4 sm:pt-5 md:pt-6 pb-3 sm:pb-4 h-[140px] sm:h-[160px] flex flex-col justify-between overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-3 sm:gap-4 flex-shrink-0 h-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 flex-shrink-0 h-auto min-h-0">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold whitespace-nowrap flex-shrink-0">
             Admin Dashboard
           </h1>
           <div className="flex-shrink-0 w-full sm:w-auto">{renderTabs()}</div>
         </div>
-        <div className="flex-shrink-0 h-[44px]">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 justify-between h-full">
+        <div className="flex-shrink-0 h-[44px] flex items-center">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 justify-between w-full h-full">
             <div className="text-muted-foreground text-xs sm:text-sm whitespace-nowrap flex-shrink-0">
               Total: {getTotal()}
             </div>
