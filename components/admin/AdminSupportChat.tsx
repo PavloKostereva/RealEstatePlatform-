@@ -24,6 +24,8 @@ interface Conversation {
   updated_at: string;
   last_message_at: string;
   unread?: number;
+  lastMessage?: string;
+  lastMessageDate?: string;
   user?: User;
 }
 
@@ -50,6 +52,7 @@ export function AdminSupportChat() {
   const [users, setUsers] = useState<Map<string, User>>(new Map());
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [showUserSelector, setShowUserSelector] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [setupError, setSetupError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -482,52 +485,18 @@ export function AdminSupportChat() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-[500px]">
-        <div className="w-full sm:w-1/3 lg:w-1/4 border-r border-subtle bg-surface-secondary flex flex-col">
-          <div className="p-5 sm:p-6 lg:p-8 border-b border-subtle">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-sm sm:text-base lg:text-lg font-semibold text-foreground">
-                All Conversations
-              </h4>
-              <span className="text-xs sm:text-sm text-muted-foreground font-medium bg-primary-600/20 text-primary-400 px-3 py-1 rounded-full">
-                {conversations.length}
-              </span>
-            </div>
-            <button
-              onClick={() => setShowUserSelector(!showUserSelector)}
-              className="w-full mb-4 px-4 py-2 rounded-xl bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition flex items-center justify-center gap-2">
-              <span>+</span>
-              New Conversation
-            </button>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setStatusFilter('all')}
-                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                  statusFilter === 'all'
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-surface text-foreground hover:bg-surface-secondary'
-                }`}>
-                All
-              </button>
-              <button
-                onClick={() => setStatusFilter('open')}
-                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                  statusFilter === 'open'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-surface text-foreground hover:bg-surface-secondary'
-                }`}>
-                Open
-              </button>
-              <button
-                onClick={() => setStatusFilter('closed')}
-                className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition ${
-                  statusFilter === 'closed'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-surface text-foreground hover:bg-surface-secondary'
-                }`}>
-                Closed
-              </button>
-            </div>
+      <div className="flex-1 flex flex-row overflow-hidden min-h-[500px]">
+        {/* Left Column - Conversations */}
+        <div className="w-1/3 border-r border-subtle bg-surface-secondary flex flex-col">
+          <div className="p-4 border-b border-subtle">
+            <h4 className="text-sm font-semibold text-foreground mb-3">Conversations</h4>
+            <input
+              type="text"
+              placeholder="Search by email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-subtle bg-surface text-foreground placeholder:text-muted-foreground text-sm"
+            />
           </div>
           <div className="flex-1 overflow-y-auto">
             {showUserSelector && (
@@ -538,7 +507,6 @@ export function AdminSupportChat() {
                 ) : (
                   <div className="space-y-2">
                     {allUsers.map((user) => {
-                      // Перевіряємо, чи вже є розмова з цим користувачем
                       const existingConv = conversations.find((c) => c.user_id === user.id);
                       return (
                         <button
@@ -571,93 +539,61 @@ export function AdminSupportChat() {
                 )}
               </div>
             )}
-            {conversations.length === 0 && !showUserSelector ? (
-              <div className="text-center text-muted-foreground text-sm sm:text-base py-12 px-4">
-                <p className="mb-2">No conversations yet</p>
-                <p className="text-xs sm:text-sm">Click "New Conversation" to start chatting</p>
-              </div>
-            ) : (
-              !showUserSelector &&
-              conversations.map((conv) => {
-                return (
-                  <button
-                    key={conv.id}
-                    onClick={async () => {
-                      setSelectedConversationId(conv.id);
-                      await markAsRead();
-                    }}
-                    className={`w-full text-left p-5 sm:p-6 lg:p-7 border-b border-subtle last:border-b-0 hover:bg-surface transition ${
-                      selectedConversationId === conv.id ? 'bg-surface' : ''
-                    }`}>
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-full bg-primary-600 flex items-center justify-center text-white font-semibold text-base sm:text-lg lg:text-xl flex-shrink-0">
-                        {users.get(conv.user_id)?.name?.[0]?.toUpperCase() ||
-                          users.get(conv.user_id)?.email?.[0]?.toUpperCase() ||
-                          'S'}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <p className="font-semibold text-foreground text-sm sm:text-base lg:text-lg truncate">
-                            {conv.subject || 'Support Request'}
-                          </p>
-                          {conv.unread && conv.unread > 0 && (
-                            <span className="h-6 min-w-[24px] rounded-full bg-primary-600 text-white text-xs sm:text-sm font-semibold flex items-center justify-center px-2 flex-shrink-0">
-                              {conv.unread}
-                            </span>
+            {!showUserSelector &&
+              (conversations.length === 0 ? (
+                <div className="text-center text-muted-foreground text-sm py-12 px-4">
+                  <p>No conversations yet</p>
+                </div>
+              ) : (
+                conversations
+                  .filter((conv) => {
+                    if (!searchQuery) return true;
+                    const user = users.get(conv.user_id);
+                    const email = user?.email || '';
+                    return email.toLowerCase().includes(searchQuery.toLowerCase());
+                  })
+                  .map((conv) => {
+                    const user = users.get(conv.user_id);
+                    const email = user?.email || conv.user_id;
+                    const lastMsg = conv.lastMessage || '';
+                    const preview =
+                      lastMsg.length > 50 ? lastMsg.substring(0, 50) + '...' : lastMsg;
+                    const dateStr = conv.lastMessageDate
+                      ? format(new Date(conv.lastMessageDate), 'M/d/yyyy, h:mm:ss a')
+                      : format(new Date(conv.last_message_at), 'M/d/yyyy, h:mm:ss a');
+
+                    return (
+                      <button
+                        key={conv.id}
+                        onClick={async () => {
+                          setSelectedConversationId(conv.id);
+                          await markAsRead();
+                        }}
+                        className={`w-full text-left p-4 border-b border-subtle last:border-b-0 hover:bg-surface transition ${
+                          selectedConversationId === conv.id ? 'bg-surface' : ''
+                        }`}>
+                        <div className="flex flex-col gap-1">
+                          <p className="font-medium text-foreground text-sm">{email}</p>
+                          {preview && (
+                            <p className="text-xs text-muted-foreground line-clamp-1">{preview}</p>
                           )}
+                          <p className="text-xs text-muted-foreground">{dateStr}</p>
                         </div>
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-2 truncate">
-                          {users.get(conv.user_id)?.name ||
-                            users.get(conv.user_id)?.email ||
-                            `User: ${conv.user_id.substring(0, 8)}...`}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            {format(new Date(conv.last_message_at), 'MMM d, yyyy')}
-                          </p>
-                          <span
-                            className={`text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-full ${
-                              conv.status === 'open'
-                                ? 'bg-emerald-500/20 text-emerald-400'
-                                : 'bg-red-500/20 text-red-400'
-                            }`}>
-                            {conv.status === 'open' ? 'Open' : 'Closed'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })
-            )}
+                      </button>
+                    );
+                  })
+              ))}
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col">
+        {/* Middle Column - Messages */}
+
+        <div className="w-1/3 border-r border-subtle bg-surface flex flex-col">
+          <div className="p-4 border-b border-subtle">
+            <h4 className="text-sm font-semibold text-foreground">Select a conversation</h4>
+          </div>
           {selectedConversation ? (
             <>
-              <div className="px-6 sm:px-8 lg:px-10 py-5 sm:py-6 lg:py-7 border-b border-subtle bg-surface-secondary">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-base sm:text-lg lg:text-xl font-semibold text-foreground mb-1 truncate">
-                      {selectedConversation.subject || 'Support Request'}
-                    </h4>
-                    <p className="text-sm sm:text-base text-muted-foreground truncate">
-                      {users.get(selectedConversation.user_id)?.name ||
-                        users.get(selectedConversation.user_id)?.email ||
-                        `User: ${selectedConversation.user_id.substring(0, 8)}...`}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-semibold flex-shrink-0 ${
-                      selectedConversation.status === 'open'
-                        ? 'bg-emerald-500/20 text-emerald-400'
-                        : 'bg-red-500/20 text-red-400'
-                    }`}>
-                    {selectedConversation.status === 'open' ? 'Open' : 'Closed'}
-                  </span>
-                </div>
-              </div>
               <div className="flex-1 overflow-y-auto p-6 sm:p-8 lg:p-10 space-y-5 sm:space-y-6 bg-surface">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -712,8 +648,8 @@ export function AdminSupportChat() {
                 )}
                 <div ref={messagesEndRef} />
               </div>
-              <div className="border-t border-subtle p-6 sm:p-8 lg:p-10 bg-surface-secondary">
-                <div className="flex gap-3 sm:gap-4">
+              <div className="border-t border-subtle p-4 bg-surface-secondary">
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={newMessage}
@@ -730,34 +666,57 @@ export function AdminSupportChat() {
                         : 'Type a message...'
                     }
                     disabled={sending}
-                    className="flex-1 h-12 sm:h-14 lg:h-16 px-5 sm:px-6 lg:px-8 rounded-xl border border-subtle bg-surface text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base lg:text-lg"
+                    className="flex-1 h-10 px-3 rounded-lg border border-subtle bg-surface text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   />
                   <button
                     onClick={sendMessage}
-                    disabled={!newMessage.trim() || sending}
-                    className="h-12 sm:h-14 lg:h-16 px-6 sm:px-8 lg:px-10 rounded-xl bg-primary-600 text-white text-sm sm:text-base lg:text-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center whitespace-nowrap shadow-md">
+                    disabled={
+                      !newMessage.trim() || sending || selectedConversation.status === 'closed'
+                    }
+                    className="h-10 px-4 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                     {sending ? (
-                      <div className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       'Send'
                     )}
                   </button>
                 </div>
-                {selectedConversation.status === 'closed' && (
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-3 text-center">
-                    This conversation is closed. Send a message to reopen it.
-                  </p>
-                )}
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-muted-foreground bg-surface">
+            <div className="flex-1 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
-                <p className="text-base mb-2">Select a conversation to start chatting</p>
-                <p className="text-sm">Choose a conversation from the list on the left</p>
+                <div className="text-6xl mb-4">💬</div>
+                <p className="text-base">Select a conversation to view messages</p>
               </div>
             </div>
           )}
+        </div>
+
+        {/* Right Column - Support Information */}
+        <div className="w-1/3 bg-surface-secondary flex flex-col">
+          <div className="p-4 border-b border-subtle">
+            <h4 className="text-sm font-semibold text-foreground">Support Information</h4>
+          </div>
+          <div className="p-4 space-y-4">
+            <p className="text-sm text-foreground">
+              Select a conversation from the left panel to view and respond to messages.
+            </p>
+            <div>
+              <h5 className="text-sm font-semibold text-foreground mb-2">Quick Actions:</h5>
+              <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                <li>Click on any conversation to view messages</li>
+                <li>Respond directly to user inquiries</li>
+                <li>Mark conversations as resolved</li>
+                <li>View conversation history</li>
+              </ul>
+            </div>
+            <button
+              onClick={() => setShowUserSelector(!showUserSelector)}
+              className="w-full px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition">
+              {showUserSelector ? 'Cancel' : '+ New Conversation'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

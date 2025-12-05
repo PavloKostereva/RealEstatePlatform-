@@ -54,10 +54,28 @@ export async function GET(request: NextRequest) {
         unreadMap.set(msg.conversation_id, count + 1);
       });
 
+      // Отримуємо останнє повідомлення для кожної розмови
+      const lastMessagesMap = new Map<string, { content: string; created_at: string }>();
+      for (const convId of conversationIds) {
+        const { data: lastMessage } = await supabase
+          .from('messages')
+          .select('content, created_at')
+          .eq('conversation_id', convId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (lastMessage) {
+          lastMessagesMap.set(convId, lastMessage);
+        }
+      }
+
       const conversationsWithUnread = conversations.map(
         (conv: { id: string; [key: string]: unknown }) => ({
           ...conv,
           unread: unreadMap.get(conv.id) || 0,
+          lastMessage: lastMessagesMap.get(conv.id)?.content || '',
+          lastMessageDate: lastMessagesMap.get(conv.id)?.created_at || conv.last_message_at,
         }),
       );
 
