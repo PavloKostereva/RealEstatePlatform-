@@ -19,12 +19,10 @@ export async function GET(request: NextRequest) {
       .select('*')
       .order('last_message_at', { ascending: false });
 
-    // Фільтр по статусу
     if (status && status !== 'all') {
       query = query.eq('status', status);
     }
 
-    // Якщо користувач не адмін, показуємо тільки його розмови
     if (session.user.role !== 'ADMIN') {
       query = query.or(`user_id.eq.${session.user.id},admin_id.eq.${session.user.id}`);
     }
@@ -54,7 +52,6 @@ export async function GET(request: NextRequest) {
         unreadMap.set(msg.conversation_id, count + 1);
       });
 
-      // Отримуємо останнє повідомлення для кожної розмови
       const lastMessagesMap = new Map<string, { content: string; created_at: string }>();
       for (const convId of conversationIds) {
         const { data: lastMessage } = await supabase
@@ -92,7 +89,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Створити нову розмову
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -118,8 +114,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Якщо адмін створює розмову, використовуємо userId з запиту
-    // Якщо користувач створює розмову, використовуємо його ID
     const finalUserId = userId || session.user.id;
 
     const { data: conversation, error } = await supabase

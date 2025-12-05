@@ -35,7 +35,7 @@ export function AdminHeader({
   };
 
   const renderTabs = () => (
-    <div className="flex gap-1 sm:gap-2 border border-subtle rounded-2xl bg-surface-secondary p-1 w-fit overflow-x-auto">
+    <div className="flex gap-1 sm:gap-2 border border-subtle rounded-2xl bg-surface-secondary p-1 w-full sm:w-auto overflow-x-auto">
       {[
         { key: 'listings', label: 'Listings', shortLabel: 'List' },
         { key: 'approvals', label: 'Approvals', shortLabel: 'Appr' },
@@ -45,7 +45,7 @@ export function AdminHeader({
         <button
           key={key}
           onClick={() => onTabChange(key as typeof activeTab)}
-          className={`px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition whitespace-nowrap flex-shrink-0 ${
+          className={`flex-1 sm:flex-initial px-3 sm:px-4 md:px-5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition whitespace-nowrap ${
             activeTab === key
               ? 'bg-primary-600 text-white shadow'
               : 'text-muted-foreground hover:bg-surface'
@@ -58,13 +58,13 @@ export function AdminHeader({
   );
 
   return (
-    <div className="sticky top-0 z-50 bg-background border-b border-subtle shadow-sm">
-      <div className="px-3 sm:px-4 md:px-6 pt-4 sm:pt-5 md:pt-6 pb-3 sm:pb-4 h-[140px] sm:h-[160px] flex flex-col justify-between overflow-hidden">
+    <div className="sticky top-0 z-50 bg-background border-b border-subtle shadow-sm w-full">
+      <div className="px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 pt-4 sm:pt-5 md:pt-6 pb-3 sm:pb-4 h-[140px] sm:h-[160px] flex flex-col justify-between overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 flex-shrink-0 h-auto min-h-0">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold whitespace-nowrap flex-shrink-0">
             Admin Dashboard
           </h1>
-          <div className="flex-shrink-0 w-full sm:w-auto">{renderTabs()}</div>
+          <div className="flex-shrink-0 w-full sm:w-auto sm:min-w-[400px]">{renderTabs()}</div>
         </div>
         <div className="flex-shrink-0 h-[44px] flex items-center">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 justify-between w-full h-full">

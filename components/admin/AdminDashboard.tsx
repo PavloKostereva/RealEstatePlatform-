@@ -768,8 +768,8 @@ export function AdminDashboard() {
     );
 
     return (
-      <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto">
-        <div className="bg-surface-secondary px-8 py-5 border-b border-subtle">
+      <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto flex flex-col flex-1 min-h-0">
+        <div className="bg-surface-secondary px-8 py-5 border-b border-subtle flex-shrink-0">
           <button
             onClick={() => toggleSection('listingsTable')}
             className="w-full flex items-center justify-between text-left">
@@ -785,8 +785,8 @@ export function AdminDashboard() {
           </button>
         </div>
         {expandedSections.listingsTable && (
-          <div className="transition-all duration-300 ease-in-out w-full max-w-full overflow-x-auto">
-            <div className="min-w-0">{tableContent}</div>
+          <div className="transition-all duration-300 ease-in-out w-full max-w-full overflow-auto flex-1 min-h-0">
+            <div className="min-w-0 min-h-full">{tableContent}</div>
           </div>
         )}
       </section>
@@ -796,16 +796,16 @@ export function AdminDashboard() {
   const renderSupport = () => {
     return (
       <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative">
-        <div className="bg-surface-secondary px-6 sm:px-8 md:px-10 py-5 md:py-6 border-b border-subtle">
+        <div className="bg-surface-secondary px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-subtle">
           <button
             onClick={() => toggleSection('support')}
             className="flex items-center gap-2 flex-1 text-left w-full">
-            <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2">
-              <span className="text-primary-400 text-xl sm:text-2xl md:text-3xl">💬</span>
+            <h3 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
+              <span className="text-primary-400 text-lg sm:text-xl">💬</span>
               <span className="hidden sm:inline">Support Chat</span>
               <span className="sm:hidden">Support</span>
             </h3>
-            <span className="text-muted-foreground text-xl sm:text-2xl transition-transform duration-200 ml-auto flex-shrink-0">
+            <span className="text-muted-foreground text-lg sm:text-xl transition-transform duration-200 ml-auto flex-shrink-0">
               {expandedSections.support !== undefined
                 ? expandedSections.support
                   ? '▼'
@@ -965,7 +965,7 @@ export function AdminDashboard() {
   );
 
   return (
-    <div className="max-w-[95rem] mx-auto text-foreground">
+    <div className="w-full text-foreground min-h-screen flex flex-col">
       <AdminHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -976,8 +976,8 @@ export function AdminDashboard() {
         onRefresh={refreshData}
       />
 
-      <div className="px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6">
-        <div className="space-y-8 w-full max-w-full mx-auto">
+      <div className="flex-1 px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 py-4 sm:py-5 md:py-6 flex flex-col min-h-0">
+        <div className="space-y-8 w-full flex-1 flex flex-col">
           {activeTab === 'listings' && (
             <>
               {renderCreateForm()}
@@ -1000,7 +1000,7 @@ export function AdminDashboard() {
           )}
 
           {activeTab === 'approvals' && (
-            <>
+            <div className="flex-1 flex flex-col min-h-0 space-y-8">
               {renderFilters(false)}
               <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative">
                 <div className="bg-surface-secondary px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-subtle">
@@ -1037,8 +1037,10 @@ export function AdminDashboard() {
                   </div>
                 </div>
               </section>
-              {renderListingsTable(pendingListings, true, pendingListingsLoading)}
-            </>
+              <div className="flex-1 min-h-0">
+                {renderListingsTable(pendingListings, true, pendingListingsLoading)}
+              </div>
+            </div>
           )}
 
           {activeTab === 'support' && renderSupport()}

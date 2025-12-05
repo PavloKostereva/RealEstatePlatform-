@@ -23,18 +23,18 @@ export function SupportContent() {
           <p className="text-lg text-muted-foreground">{t('description')}</p>
 
           {!session && (
-            <div className="space-y-2">
-              <p className="text-foreground">
-                <span className="font-medium">{t('email')}: </span>
-                <a
-                  href={`mailto:${t('emailAddress')}`}
-                  className="text-primary-600 hover:text-primary-700 hover:underline"
-                >
-                  {t('emailAddress')}
-                </a>
-              </p>
-              <p className="text-muted-foreground">{t('responseTime')}</p>
-            </div>
+          <div className="space-y-2">
+            <p className="text-foreground">
+              <span className="font-medium">{t('email')}: </span>
+              <a
+                href={`mailto:${t('emailAddress')}`}
+                className="text-primary-600 hover:text-primary-700 hover:underline"
+              >
+                {t('emailAddress')}
+              </a>
+            </p>
+            <p className="text-muted-foreground">{t('responseTime')}</p>
+          </div>
           )}
 
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -45,12 +45,12 @@ export function SupportContent() {
               {t('backToHome')}
             </Link>
             {!session && (
-              <a
-                href={`mailto:${t('emailAddress')}`}
-                className="flex-1 px-6 py-3 rounded-xl bg-primary-600 text-white font-medium hover:bg-primary-700 transition text-center"
-              >
-                {t('emailSupport')}
-              </a>
+            <a
+              href={`mailto:${t('emailAddress')}`}
+              className="flex-1 px-6 py-3 rounded-xl bg-primary-600 text-white font-medium hover:bg-primary-700 transition text-center"
+            >
+              {t('emailSupport')}
+            </a>
             )}
           </div>
         </div>
