@@ -123,6 +123,11 @@ export function AdminDashboard() {
   const [editImageFiles, setEditImageFiles] = useState<File[]>([]);
   const [editLoading, setEditLoading] = useState(false);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [listingToDelete, setListingToDelete] = useState<{ id: string; title: string } | null>(
+    null,
+  );
+  const [deleteLoading, setDeleteLoading] = useState(false);
   // Зберігаємо стан розгорнутих секцій для кожної вкладки окремо
   const [expandedSectionsByTab, setExpandedSectionsByTab] = useState<
     Record<
@@ -469,19 +474,29 @@ export function AdminDashboard() {
     }
   };
 
-  const handleDeleteListing = async (listingId: string) => {
-    if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
-      return;
+  const handleDeleteListing = (listingId: string) => {
+    // Знаходимо оголошення для відображення назви
+    const listing = [...allListings, ...pendingListings].find((l) => l.id === listingId);
+    if (listing) {
+      setListingToDelete({ id: listingId, title: listing.title });
+      setDeleteModalOpen(true);
     }
+  };
 
+  const confirmDeleteListing = async () => {
+    if (!listingToDelete) return;
+
+    setDeleteLoading(true);
     try {
-      const res = await fetch(`/api/listings/${listingId}`, {
+      const res = await fetch(`/api/listings/${listingToDelete.id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
 
       if (res.ok) {
         toast.success('Listing deleted successfully');
+        setDeleteModalOpen(false);
+        setListingToDelete(null);
         refreshData();
       } else {
         const error = await res.json();
@@ -490,6 +505,8 @@ export function AdminDashboard() {
     } catch (error) {
       console.error('Error deleting listing:', error);
       toast.error('Failed to delete listing');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -1422,6 +1439,63 @@ export function AdminDashboard() {
           {activeTab === 'iban' && renderIban()}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && listingToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-surface rounded-3xl border border-subtle shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <div className="p-6 sm:p-8">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-2xl text-red-500">⚠️</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-foreground mb-1">
+                    Delete Listing
+                  </h3>
+                  <p className="text-sm text-muted-foreground">This action cannot be undone</p>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-foreground mb-2">
+                  Are you sure you want to delete this listing?
+                </p>
+                <div className="bg-surface-secondary rounded-xl p-4 border border-subtle">
+                  <p className="font-medium text-foreground text-sm sm:text-base">
+                    {listingToDelete.title}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 sm:gap-4">
+                <button
+                  onClick={() => {
+                    setDeleteModalOpen(false);
+                    setListingToDelete(null);
+                  }}
+                  disabled={deleteLoading}
+                  className="flex-1 h-12 rounded-xl border border-subtle bg-surface-secondary text-foreground font-semibold hover:border-primary-400 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 disabled:opacity-50">
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteListing}
+                  disabled={deleteLoading}
+                  className="flex-1 h-12 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg hover:shadow-red-600/30 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {deleteLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Listing Modal */}
       {editModalOpen && editingListing && (

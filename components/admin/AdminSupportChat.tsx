@@ -65,6 +65,8 @@ export function AdminSupportChat({
   const [searchQuery, setSearchQuery] = useState('');
   const [setupError, setSetupError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const shouldScrollRef = useRef(false);
+  const lastMessageCountRef = useRef(0);
 
   // Завантажуємо список користувачів при завантаженні
   useEffect(() => {
@@ -142,11 +144,17 @@ export function AdminSupportChat({
 
   // Real-time subscription для messages
   useEffect(() => {
-    if (!selectedConversationId) return;
+    if (!selectedConversationId) {
+      setMessages([]);
+      lastMessageCountRef.current = 0;
+      return;
+    }
 
-    // Спочатку завантажуємо повідомлення
+    // Скидаємо лічильник при зміні розмови
+    lastMessageCountRef.current = 0;
+    // Спочатку завантажуємо повідомлення з прокруткою
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    fetchMessages(selectedConversationId);
+    fetchMessages(selectedConversationId, true);
 
     // Налаштовуємо real-time підписку для повідомлень (якщо Supabase налаштований)
     const supabase = createClient();
@@ -175,6 +183,8 @@ export function AdminSupportChat({
                   if (prev.some((m) => m.id === newMessage.id)) {
                     return prev;
                   }
+                  // Якщо це нове повідомлення, прокручуємо вниз
+                  shouldScrollRef.current = true;
                   return [...prev, newMessage];
                 });
                 // Оновлюємо список розмов для оновлення last_message_at
@@ -197,7 +207,7 @@ export function AdminSupportChat({
     // Polling (частіше, якщо real-time не працює)
     const pollInterval = supabase ? 30000 : 3000; // 30 сек якщо є real-time, 3 сек якщо ні
     const interval = setInterval(() => {
-      fetchMessages(selectedConversationId);
+      fetchMessages(selectedConversationId, false); // Не прокручуємо при polling
     }, pollInterval);
 
     return () => {
@@ -209,11 +219,24 @@ export function AdminSupportChat({
   }, [selectedConversationId]);
 
   useEffect(() => {
-    scrollToBottom();
+    // Прокручуємо тільки якщо:
+    // 1. shouldScrollRef.current === true (встановлено при відкритті розмови або надсиланні повідомлення)
+    // 2. Або кількість повідомлень збільшилася (нове повідомлення)
+    const currentMessageCount = messages.length;
+    const hasNewMessages = currentMessageCount > lastMessageCountRef.current;
+
+    if (shouldScrollRef.current || hasNewMessages) {
+      scrollToBottom();
+      shouldScrollRef.current = false;
+    }
+
+    lastMessageCountRef.current = currentMessageCount;
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const fetchUserInfo = async (userId: string) => {
@@ -337,7 +360,7 @@ export function AdminSupportChat({
     }
   };
 
-  const fetchMessages = async (conversationId: string) => {
+  const fetchMessages = async (conversationId: string, shouldScroll = false) => {
     try {
       const res = await fetch(`/api/chat/messages?conversationId=${conversationId}`, {
         credentials: 'include',
@@ -345,6 +368,9 @@ export function AdminSupportChat({
       if (res.ok) {
         const data = await res.json();
         setMessages(data || []);
+        if (shouldScroll) {
+          shouldScrollRef.current = true;
+        }
       } else {
         const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
         console.error('Error fetching messages:', errorData);
@@ -377,12 +403,14 @@ export function AdminSupportChat({
 
       if (res.ok) {
         const message = await res.json();
-        setMessages((prev) => [...prev, message]);
+        setMessages((prev) => {
+          // Прокручуємо після додавання нового повідомлення
+          shouldScrollRef.current = true;
+          return [...prev, message];
+        });
         setNewMessage('');
         // Оновлюємо розмови, щоб відобразити зміни статусу (якщо розмова була закрита, вона відкриється)
         await fetchConversations();
-        await fetchMessages(selectedConversationId);
-        scrollToBottom();
       } else {
         const errorData = await res.json();
         console.error('Error sending message:', errorData);
@@ -424,7 +452,7 @@ export function AdminSupportChat({
   const markAsRead = async () => {
     // Marking as read is handled automatically when fetching messages
     if (selectedConversationId) {
-      await fetchMessages(selectedConversationId);
+      await fetchMessages(selectedConversationId, false);
       await fetchConversations();
     }
   };
@@ -629,7 +657,13 @@ export function AdminSupportChat({
                   </div>
                 ) : (
                   messages.map((message, index) => {
-                    const isOwn = message.sender_id === session?.user.id;
+                    // Визначаємо, чи повідомлення від адміна
+                    // Адмін завжди відправник, якщо sender_id === admin_id або sender_id === session.user.id (якщо поточний користувач - адмін)
+                    const isAdminMessage =
+                      (selectedConversation?.admin_id &&
+                        message.sender_id === selectedConversation.admin_id) ||
+                      (session?.user.role === 'ADMIN' && message.sender_id === session?.user.id);
+                    const isOwn = isAdminMessage;
                     return (
                       <div
                         key={message.id}
