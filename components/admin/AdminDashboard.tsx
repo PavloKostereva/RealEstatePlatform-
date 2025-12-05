@@ -796,16 +796,16 @@ export function AdminDashboard() {
   const renderSupport = () => {
     return (
       <section className="rounded-3xl border border-subtle bg-surface shadow-md overflow-hidden w-full max-w-full mx-auto relative">
-        <div className="bg-surface-secondary px-4 sm:px-6 md:px-8 py-4 md:py-5 border-b border-subtle">
+        <div className="bg-surface-secondary px-6 sm:px-8 md:px-10 py-5 md:py-6 border-b border-subtle">
           <button
             onClick={() => toggleSection('support')}
             className="flex items-center gap-2 flex-1 text-left w-full">
-            <h3 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">
-              <span className="text-primary-400 text-lg sm:text-xl">💬</span>
+            <h3 className="text-lg sm:text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2">
+              <span className="text-primary-400 text-xl sm:text-2xl md:text-3xl">💬</span>
               <span className="hidden sm:inline">Support Chat</span>
               <span className="sm:hidden">Support</span>
             </h3>
-            <span className="text-muted-foreground text-lg sm:text-xl transition-transform duration-200 ml-auto flex-shrink-0">
+            <span className="text-muted-foreground text-xl sm:text-2xl transition-transform duration-200 ml-auto flex-shrink-0">
               {expandedSections.support !== undefined
                 ? expandedSections.support
                   ? '▼'
@@ -820,7 +820,7 @@ export function AdminDashboard() {
               ? 'max-h-[5000px] opacity-100'
               : 'max-h-0 opacity-0'
           }`}>
-          <div className="w-full max-w-full">
+          <div className="w-full max-w-full p-4 sm:p-6 md:p-8">
             <AdminSupportChat />
           </div>
         </div>
